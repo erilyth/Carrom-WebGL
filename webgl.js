@@ -87,45 +87,46 @@ function Initialize()
 	gl.useProgram(program);
 
   var color = [
-    254,  240,  195,  1.0,    // white
-    254,  240,  195,  1.0,    // white
-    254,  240,  195,  1.0,    // white
-    254,  240,  195,  1.0,    // white
-    254,  240,  195,  1.0,    // white
-    254,  240,  195,  1.0    // white
+    254,  240,  195,  1.0
   ];
   drawRectangle('boardbase', {'x':0, 'y':0}, 2, 2, color);
 
   var color2 = [
-    0, 0, 0, 1.0
+    125, 125, 78, 1.0
   ];
-
-  drawCircle('acircle', {'x':0, 'y':0}, 0.3, color2, 50);
-
+  drawCircle('striker', {'x':0, 'y':0}, 0.1, color2, 50);
   setInterval(drawScene, 50);
 }
 
 function drawScene(){
-  console.log('yo');
+  for(var key in rectangles){
+    var rectangle = rectangles[key];
+    drawRectangle(key, {'x':rectangle['center']['x'], 'y':rectangle['center']['y']}, rectangle['height'], rectangle['width'], rectangle['color']);
+  }
+  for(var key in circles){
+    circles[key].center['x'] += 0.01;
+    var circle = circles[key];
+    drawCircle(key, {'x':circle['center']['x'], 'y':circle['center']['y']}, circle['radius'], circle['color'], 50);
+  }
 }
 
-function drawRectangle(name, center, height, width, colors){
-  for (var i = 0; i < colors.length; i++) {
+function drawRectangle(name, center, height, width, color){
+  for (var i = 0; i < color.length; i++) {
     if (i%4 != 3){
-      colors[i] /= 255.0;
+      color[i] /= 255.0;
     }
   } 
 
   //Setup the color variable for the shader
   var vertexColor = gl.getAttribLocation(program, "a_color");
-  /*var colors = [
-    1.0,  1.0,  1.0,  1.0,    // white
-    1.0,  0.0,  0.0,  1.0,    // red
-    0.0,  1.0,  0.0,  1.0,    // green
-    1.0,  0.0,  0.0,  1.0,    // red
-    0.0,  0.0,  1.0,  1.0,    // green
-    0.0,  1.0,  0.0,  1.0    // blue
-  ];*/
+  var colors = [
+    color[0], color[1], color[2], color[3],    // white
+    color[0], color[1], color[2], color[3],    // white
+    color[0], color[1], color[2], color[3],    // white
+    color[0], color[1], color[2], color[3],    // white
+    color[0], color[1], color[2], color[3],    // white
+    color[0], color[1], color[2], color[3]    // white
+  ];
   var colorbuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, colorbuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
@@ -154,8 +155,8 @@ function drawRectangle(name, center, height, width, colors){
 
   // draw
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-  var object = {'colors':colors, 'center':center, 'height':height, 'width':width};
+  console.log(color);
+  var object = {'color':[color[0]*255,color[1]*255,color[2]*255,color[3]], 'center':center, 'height':height, 'width':width};
   rectangles[name] = object;
 }
 
@@ -212,6 +213,6 @@ function drawCircle(name, center, radius, color, triangles){
   // draw
   gl.drawArrays(gl.TRIANGLES, 0, 3*triangles);
 
-  var object = {'colors':colors, 'center':center, 'radius':radius};
+  var object = {'color':[color[0]*255,color[1]*255,color[2]*255,color[3]], 'center':center, 'radius':radius};
   circles[name] = object;
 }
