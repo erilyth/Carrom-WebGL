@@ -1,0 +1,36 @@
+<!DOCTYPE <!DOCTYPE html>
+<html>
+<head>
+	<title>Experiment-webgl</title>
+	<script type="text/javascript" src="webgl.js"></script>
+
+	<script id="2d-vertex-shader" type="x-shader/x-vertex">
+		attribute vec2 a_position;
+    attribute vec4 a_color;
+ 
+    varying lowp vec4 vColor;
+
+		void main() {
+  		gl_Position = vec4(a_position, 0, 1);
+      vColor = a_color;
+		}
+	</script>
+ 
+	<script id="2d-fragment-shader" type="x-shader/x-fragment">
+    varying lowp vec4 vColor;
+
+		void main() {
+  		gl_FragColor = vColor;
+		}
+	</script>
+</head>
+<body onload='Initialize()'>
+
+<!-- <a href="javascript:Initialize()">click me</a> -->
+<canvas id="canvas" width="640" height="480" >
+
+
+</canvas>
+
+</body>
+</html>
