@@ -2,32 +2,35 @@
 <html>
 <head>
 	<title>Experiment-webgl</title>
+	<script src="jquery.js"></script>
 	<script type="text/javascript" src="webgl.js"></script>
 
 	<script id="2d-vertex-shader" type="x-shader/x-vertex">
-		attribute vec2 a_position;
+	attribute vec3 a_position;
     attribute vec4 a_color;
+
+    uniform mat4 u_matrix;
  
     varying lowp vec4 vColor;
 
-		void main() {
-  		gl_Position = vec4(a_position, 0, 1);
-      vColor = a_color;
-		}
+	void main() {
+  		gl_Position = u_matrix * vec4(a_position, 1);
+      	vColor = a_color;
+	}
 	</script>
  
 	<script id="2d-fragment-shader" type="x-shader/x-fragment">
     varying lowp vec4 vColor;
 
-		void main() {
+	void main() {
   		gl_FragColor = vColor;
-		}
+	}
 	</script>
 </head>
 <body onload='Initialize()'>
 
 <!-- <a href="javascript:Initialize()">click me</a> -->
-<canvas id="canvas" width="640" height="480" >
+<canvas id="canvas" width="500" height="500" >
 
 
 </canvas>
