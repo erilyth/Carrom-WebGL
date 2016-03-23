@@ -92,23 +92,83 @@ function Initialize()
 	program = createProgramFromScripts(gl,"2d-vertex-shader", "2d-fragment-shader");
 	gl.useProgram(program);
 
-  viewMatrix = makeYRotation(0 * (3.14/180));
-  makeModel('cube1', 0, 0, 0, 0.2, 0.2, 0.2, 'cube.data')
-
+  //Set this viewMatrix before calling the makeModel function, this can be treated as the camera.
+  //Assuming individual objects won't have any rotation.
+  //viewMatrix = makePerspective(180 * (3.14/180), 1, 0, 5000);
+  viewMatrix = matrixMultiply(viewMatrix, makeXRotation(90 * (3.14/180)));
+  viewMatrix = matrixMultiply(viewMatrix, makeYRotation(60 * (3.14/180)));
+  viewMatrix = matrixMultiply(viewMatrix, makeXRotation(-40 * (3.14/180)));
+  viewMatrix = matrixMultiply(viewMatrix, makeZToWMatrix(0.4));
+  makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 'boardinner.data')
+  makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data')
+  makeModel('boardouter2', 0, -0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data')
+  makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data')
+  makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data')
   setInterval(drawScene, 50);
 }
 
 var temp = 0;
 
+// 0 1 2 3        0 1 2 3
+// 4 5 6 7        4 5 6 7
+// 8 9 10 11      8 9 10 11
+// 12 13 14 15    12 13 14 15
+function matrixMultiply(mat1, mat2){
+  return [
+    mat1[0]*mat2[0]+mat1[1]*mat2[4]+mat1[2]*mat2[8]+mat1[3]*mat2[12],
+    mat1[0]*mat2[1]+mat1[1]*mat2[5]+mat1[2]*mat2[9]+mat1[3]*mat2[13],
+    mat1[0]*mat2[2]+mat1[1]*mat2[6]+mat1[2]*mat2[10]+mat1[3]*mat2[14],
+    mat1[0]*mat2[3]+mat1[1]*mat2[7]+mat1[2]*mat2[11]+mat1[3]*mat2[15],
+    mat1[4]*mat2[0]+mat1[5]*mat2[4]+mat1[6]*mat2[8]+mat1[7]*mat2[12],
+    mat1[4]*mat2[1]+mat1[5]*mat2[5]+mat1[6]*mat2[9]+mat1[7]*mat2[13],
+    mat1[4]*mat2[2]+mat1[5]*mat2[6]+mat1[6]*mat2[10]+mat1[7]*mat2[14],
+    mat1[4]*mat2[3]+mat1[5]*mat2[7]+mat1[6]*mat2[11]+mat1[7]*mat2[15],
+    mat1[8]*mat2[0]+mat1[9]*mat2[4]+mat1[10]*mat2[8]+mat1[11]*mat2[12],
+    mat1[8]*mat2[1]+mat1[9]*mat2[5]+mat1[10]*mat2[9]+mat1[11]*mat2[13],
+    mat1[8]*mat2[2]+mat1[9]*mat2[6]+mat1[10]*mat2[10]+mat1[11]*mat2[14],
+    mat1[8]*mat2[3]+mat1[9]*mat2[7]+mat1[10]*mat2[11]+mat1[11]*mat2[15],
+    mat1[12]*mat2[0]+mat1[13]*mat2[4]+mat1[14]*mat2[8]+mat1[15]*mat2[12],
+    mat1[12]*mat2[1]+mat1[13]*mat2[5]+mat1[14]*mat2[9]+mat1[15]*mat2[13],
+    mat1[12]*mat2[2]+mat1[13]*mat2[6]+mat1[14]*mat2[10]+mat1[15]*mat2[14],
+    mat1[12]*mat2[3]+mat1[13]*mat2[7]+mat1[14]*mat2[11]+mat1[15]*mat2[15]
+  ];
+}
+
+var temp = 0.0;
+
 function drawScene(){
   for(var key in models){
     var model = models[key];
     console.log(model);
-    //temp += 0.01
-    model['center'][0] += 0.01;
-    viewMatrix = makeYRotation(temp);
+    temp += 0.1
+    viewMatrix = makeScale(0.75, 0.75, 0.75);
+    viewMatrix = matrixMultiply(viewMatrix, makeXRotation(90 * (3.14/180)));
+    viewMatrix = matrixMultiply(viewMatrix, makeYRotation(temp * (3.14/180)));
+    viewMatrix = matrixMultiply(viewMatrix, makeXRotation(-40 * (3.14/180)));
+    viewMatrix = matrixMultiply(viewMatrix, makeZToWMatrix(0.4));
     createModel('cubex', model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['filedata'], model['filename']);
   }
+}
+
+function makePerspective(fieldOfViewInRadians, aspect, near, far) {
+  var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
+  var rangeInv = 1.0 / (near - far);
+ 
+  return [
+    f / aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, (near + far) * rangeInv, -1,
+    0, 0, near * far * rangeInv * 2, 0
+  ];
+};
+
+function makeZToWMatrix(fudgeFactor) {
+  return [
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, fudgeFactor,
+    0, 0, 0, 1,
+  ];
 }
 
 function makeTranslation(tx, ty, tz) {
@@ -195,9 +255,9 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filed
       var words = lines[j].split(' ');
       if(words[0] == "v"){
           var cur_point = {};
-          cur_point['x']=parseFloat(words[1]) + x_pos;
-          cur_point['y']=parseFloat(words[2]) + y_pos;
-          cur_point['z']=parseFloat(words[3]) + z_pos;
+          cur_point['x']=parseFloat(words[1]);
+          cur_point['y']=parseFloat(words[2]);
+          cur_point['z']=parseFloat(words[3]);
           //console.log(words);
           points.push(cur_point);
       }
@@ -229,15 +289,15 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filed
           my_triangle['p1'] = t[0]-1;
           my_triangle['p2'] = t[1]-1;
           my_triangle['p3'] = t[2]-1;
-          vertex_buffer_data.push(points[my_triangle['p1']]['x']*x_scale);
-          vertex_buffer_data.push(points[my_triangle['p1']]['y']*y_scale);
-          vertex_buffer_data.push(points[my_triangle['p1']]['z']*z_scale);
-          vertex_buffer_data.push(points[my_triangle['p2']]['x']*x_scale);
-          vertex_buffer_data.push(points[my_triangle['p2']]['y']*y_scale);
-          vertex_buffer_data.push(points[my_triangle['p2']]['z']*z_scale);
-          vertex_buffer_data.push(points[my_triangle['p3']]['x']*x_scale);
-          vertex_buffer_data.push(points[my_triangle['p3']]['y']*y_scale);
-          vertex_buffer_data.push(points[my_triangle['p3']]['z']*z_scale);
+          vertex_buffer_data.push(points[my_triangle['p1']]['x']*x_scale + x_pos);
+          vertex_buffer_data.push(points[my_triangle['p1']]['y']*y_scale + y_pos);
+          vertex_buffer_data.push(points[my_triangle['p1']]['z']*z_scale + z_pos);
+          vertex_buffer_data.push(points[my_triangle['p2']]['x']*x_scale + x_pos);
+          vertex_buffer_data.push(points[my_triangle['p2']]['y']*y_scale + y_pos);
+          vertex_buffer_data.push(points[my_triangle['p2']]['z']*z_scale + z_pos);
+          vertex_buffer_data.push(points[my_triangle['p3']]['x']*x_scale + x_pos);
+          vertex_buffer_data.push(points[my_triangle['p3']]['y']*y_scale + y_pos);
+          vertex_buffer_data.push(points[my_triangle['p3']]['z']*z_scale + z_pos);
       }
       if(words[0] == 'c'){
           var r1,g1,b1,r2,g2,b2,r3,g3,b3;
