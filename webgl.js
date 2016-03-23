@@ -1,8 +1,8 @@
 var canvas,gl,program;
 
-var rectangles = {};
-var circles = {};
 var models = {};
+
+var viewMatrix = makeScale(1, 1, 1);
 
 function initViewport(gl, canvas)
 {
@@ -92,30 +92,22 @@ function Initialize()
 	program = createProgramFromScripts(gl,"2d-vertex-shader", "2d-fragment-shader");
 	gl.useProgram(program);
 
-  var color = [
-    254,  240,  195,  1.0
-  ];
-  //drawRectangle('boardbase', {'x':0, 'y':0}, 2, 2, color);
+  viewMatrix = makeYRotation(0 * (3.14/180));
+  makeModel('cube1', 0, 0, 0, 0.2, 0.2, 0.2, 'cube.data')
 
-  var color2 = [
-    125, 125, 78, 1.0
-  ];
-  //drawCircle('striker', {'x':0, 'y':0}, 0.1, color2, 50);
-
-  makeModel('test', 0, 0, 0, 0.2, 0.2, 0.2, 'cube.data')
-
-  //setInterval(drawScene, 50);
+  setInterval(drawScene, 50);
 }
 
+var temp = 0;
+
 function drawScene(){
-  for(var key in rectangles){
-    var rectangle = rectangles[key];
-    drawRectangle(key, {'x':rectangle['center']['x'], 'y':rectangle['center']['y']}, rectangle['height'], rectangle['width'], rectangle['color']);
-  }
-  for(var key in circles){
-    circles[key].center['x'] += 0.01;
-    var circle = circles[key];
-    drawCircle(key, {'x':circle['center']['x'], 'y':circle['center']['y']}, circle['radius'], circle['color'], 50);
+  for(var key in models){
+    var model = models[key];
+    console.log(model);
+    //temp += 0.01
+    model['center'][0] += 0.01;
+    viewMatrix = makeYRotation(temp);
+    createModel('cubex', model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['filedata'], model['filename']);
   }
 }
 
@@ -173,117 +165,6 @@ function makeScale(sx, sy, sz) {
   ];
 }
 
-function drawRectangle(name, center, height, width, color){
-  for (var i = 0; i < color.length; i++) {
-    if (i%4 != 3){
-      color[i] /= 255.0;
-    }
-  } 
-
-  //Setup the color variable for the shader
-  var vertexColor = gl.getAttribLocation(program, "a_color");
-  var colors = [
-    color[0], color[1], color[2], color[3],
-    color[0], color[1], color[2], color[3],
-    color[0], color[1], color[2], color[3],
-    color[0], color[1], color[2], color[3],
-    color[0], color[1], color[2], color[3],
-    color[0], color[1], color[2], color[3]
-  ];
-
-  var colorbuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorbuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(vertexColor);
-  gl.vertexAttribPointer(vertexColor, 4, gl.FLOAT, false, 0, 0);
-
-  // look up where the vertex data needs to go.
-  var positionLocation = gl.getAttribLocation(program, "a_position");
-   
-  // Create a buffer and put a single clipspace rectangle in
-  // it (2 triangles)
-  //console.log(center.x - width/2, center.y - height/2);
-  var vertices = [
-    center.x - width/2, center.y - height/2, 0,
-    center.x + width/2, center.y - height/2, 0,
-    center.x - width/2, center.y + height/2, 0,
-    center.x + width/2, center.y - height/2, 0,
-    center.x + width/2, center.y + height/2, 0,
-    center.x - width/2, center.y + height/2, 0
-  ];
-  var buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(positionLocation);
-  gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
-
-  // draw
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-  //console.log(color);
-  var object = {'color':[color[0]*255,color[1]*255,color[2]*255,color[3]], 'center':center, 'height':height, 'width':width};
-  rectangles[name] = object;
-}
-
-function drawCircle(name, center, radius, color, triangles){
-
-  color[0]/=255.0;
-  color[1]/=255.0;
-  color[2]/=255.0;
-
-  var colors = [];
-
-  for(var i=0; i<triangles*3; i++){
-    colors.push(color[0]);
-    colors.push(color[1]);
-    colors.push(color[2]);
-    colors.push(color[3]);
-  }
-
-  //Setup the color variable for the shader
-  var vertexColor = gl.getAttribLocation(program, "a_color");
-  var colorbuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorbuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(vertexColor);
-  gl.vertexAttribPointer(vertexColor, 4, gl.FLOAT, false, 0, 0);
-
-  // look up where the vertex data needs to go.
-  var positionLocation = gl.getAttribLocation(program, "a_position");
-   
-  // Create a buffer and put a single clipspace rectangle in
-  // it (2 triangles)
-  //console.log(center.x - width/2, center.y - height/2);
-  
-  var vertices = [];
-  var angle=(2*3.1415/triangles);
-  var current_angle = 0;
-
-  for(var i=0; i<triangles; i++){
-    vertices.push(center.x);
-    vertices.push(center.y);
-    vertices.push(0);
-    vertices.push(center.x + radius*Math.cos(current_angle));
-    vertices.push(center.y + radius*Math.sin(current_angle));
-    vertices.push(0);
-    vertices.push(center.x + radius*Math.cos(current_angle+angle));
-    vertices.push(center.y + radius*Math.sin(current_angle+angle));
-    vertices.push(0);
-    current_angle += angle;
-  }
-
-  var buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(positionLocation);
-  gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
-
-  // draw
-  gl.drawArrays(gl.TRIANGLES, 0, 3*triangles);
-
-  var object = {'color':[color[0]*255,color[1]*255,color[2]*255,color[3]], 'center':center, 'radius':radius};
-  circles[name] = object;
-}
-
 function openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filename){
   var datastring;
   $.ajax({
@@ -291,7 +172,7 @@ function openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filename
     dataType: "text",
     success : function (data) {
       datastring = data;
-      createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, datastring);
+      createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, datastring, filename);
     }
   });
 }
@@ -300,7 +181,7 @@ function makeModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filenam
   openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filename);
 }
 
-function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filedata) //Create object from blender
+function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filedata, filename) //Create object from blender
 {
     var vertex_buffer_data = [];
     var color_buffer_data = [];
@@ -314,10 +195,10 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filed
       var words = lines[j].split(' ');
       if(words[0] == "v"){
           var cur_point = {};
-          cur_point['x']=parseFloat(words[1]);
-          cur_point['y']=parseFloat(words[2]);
-          cur_point['z']=parseFloat(words[3]);
-          console.log(words);
+          cur_point['x']=parseFloat(words[1]) + x_pos;
+          cur_point['y']=parseFloat(words[2]) + y_pos;
+          cur_point['z']=parseFloat(words[3]) + z_pos;
+          //console.log(words);
           points.push(cur_point);
       }
     }
@@ -345,7 +226,6 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filed
           }
           t.push(ans);
           var my_triangle = {};
-          //console.log(t);
           my_triangle['p1'] = t[0]-1;
           my_triangle['p2'] = t[1]-1;
           my_triangle['p3'] = t[2]-1;
@@ -397,15 +277,14 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filed
     gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
     var u_matrix = gl.getUniformLocation(program, "u_matrix");
-    var matrix = makeYRotation(0 * (3.14/180));
     //matrix = matrixMultiply(matrix, makeYRotation(69 * (3.14/180)));
-    gl.uniformMatrix4fv(u_matrix, false, matrix);
+    gl.uniformMatrix4fv(u_matrix, false, viewMatrix);
 
     //console.log(vertex_buffer_data);
-    //console.log(vertex_buffer_data.length/3);
+    console.log(vertex_buffer_data.length);
 
     // draw
     gl.drawArrays(gl.TRIANGLES, 0, vertex_buffer_data.length/3);
-    var mymodel = {'center':[x_pos,y_pos,z_pos], 'scale':[x_scale,y_scale,z_scale], 'name':name};
+    var mymodel = {'center':[x_pos,y_pos,z_pos], 'scale':[x_scale,y_scale,z_scale], 'name':name, 'filedata':filedata, 'filename':filename};
     models[name] = mymodel;
 }
