@@ -10,6 +10,7 @@ var friction = 0.95;
 var minSpeedLimit = 0.003;
 var collisionOffset = 0.02;
 var collisionOffsetLimit = 0.02;
+var startBoundary = 0.5;
 
 var cameraMatrix = makeScale(1, 1, 1);
 var MVPMatrix = makeScale(1, 1, 1);
@@ -107,22 +108,27 @@ function Initialize()
   // which would give us the individual scaling/rotation of each object. 
   //MVPMatrix = makePerspective(180 * (3.14/180), 1, 0, 5000);
   makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 0, 0, 0, 'boardinner.data', 0);
+  
   makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 0, 0, 0, 'boardouter.data', 0);
   makeModel('boardouter2', 0, -0.75, 0, 1.6, 0.1, 0.15, 0, 0, 0, 'boardouter.data', 0);
   makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 0, 0, 0,  'boardouter.data', 0);
   makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 0, 0, 0, 'boardouter.data', 0);
-  makeModel('boardline', 0, 0, -overlapMargin, 0.97, 0.97, 0.03, 0, 0, 0, 'boardouter.data', 0);
-  makeModel('boardline2', 0, 0, -2*overlapMargin, 0.95, 0.95, 0.03, 0, 0, 0, 'boardinner.data', 0);
+  
+  makeModel('boardline', 0, 0, -overlapMargin, 1.1, 1.1, 0.03, 0, 0, 0, 'boardouter.data', 0);
+  makeModel('boardline2', 0, 0, -2*overlapMargin, 1.08, 1.08, 0.03, 0, 0, 0, 'boardinner.data', 0);
+ 
   makeModel('cylindercenter1', 0, 0, 0, 0.2, 0.2, 0.018, 0, 0, 0, 'cylinder.data', 0);
   makeModel('cylindercenter2', 0, 0, 0, 0.185, 0.185, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
-  makeModel('cylinderside1', -0.45, -0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
-  makeModel('cylinderside2', -0.45, -0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
-  makeModel('cylinderside3', 0.45, -0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
-  makeModel('cylinderside4', 0.45, -0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
-  makeModel('cylinderside5', -0.45, 0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
-  makeModel('cylinderside6', -0.45, 0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
-  makeModel('cylinderside7', 0.45, 0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
-  makeModel('cylinderside8', 0.45, 0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  
+  makeModel('cylinderside1', -0.506, -0.506, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside2', -0.506, -0.506, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside3', 0.506, -0.506, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside4', 0.506, -0.506, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside5', -0.506, 0.506, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside6', -0.506, 0.506, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside7', 0.506, 0.506, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside8', 0.506, 0.506, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  
   makeModel('goal1', -0.66, -0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
   makeModel('goal2', 0.66, -0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
   makeModel('goal3', -0.66, 0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
@@ -131,10 +137,22 @@ function Initialize()
   makeModel('goal2inner', 0.66, -0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   makeModel('goal3inner', -0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   makeModel('goal4inner', 0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
-  makeModel('striker', 0, 0, -0.04, 0.05, 0.05, 0.01, 0.15, 0.15, 0, 'cylindergrey.data', 1);
-  makeModel('striker2', 0.08, 0.08, -0.03, 0.05, 0.05, 0.01, -0.15, 0.3, 0, 'cylinder.data', 1);
-  makeModel('striker3', -0.08, -0.08, -0.03, 0.05, 0.05, 0.01, -0.15, 0.3, 0, 'cylinder.data', 1);
-  makeModel('striker4', 0.08, -0.08, -0.03, 0.05, 0.05, 0.01, -0.15, 0.3, 0, 'cylinder.data', 1);
+  
+  makeModel('striker', -startBoundary, 0, -0.03, 0.05, 0.05, 0.01, 0, 0, 0, 'cylindergrey.data', 1);
+
+  var radius = 0.13;
+  var angleOffset = 360/8; //6 is the number of coins to place
+
+  makeModel('black1', radius*Math.cos(0 * angleOffset * (3.14/180)), radius*Math.sin(0 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white1', radius*Math.cos(1 * angleOffset * (3.14/180)), radius*Math.sin(1 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black2', radius*Math.cos(2 * angleOffset * (3.14/180)), radius*Math.sin(2 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white2', radius*Math.cos(3 * angleOffset * (3.14/180)), radius*Math.sin(3 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black3', radius*Math.cos(4 * angleOffset * (3.14/180)), radius*Math.sin(4 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white3', radius*Math.cos(5 * angleOffset * (3.14/180)), radius*Math.sin(5 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black4', radius*Math.cos(6 * angleOffset * (3.14/180)), radius*Math.sin(6 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white4', radius*Math.cos(7 * angleOffset * (3.14/180)), radius*Math.sin(7 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
+  
   setInterval(drawScene, 33); //30 fps
 }
 
@@ -267,7 +285,7 @@ function drawScene(){
   for(var key in coins){
     var model = coins[key];
     //console.log(model);
-    temp += 0.05
+    //temp += 0.05
     cameraMatrix = makeScale(0.56, 0.56, 0.56);
     cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
     cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
