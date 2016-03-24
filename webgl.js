@@ -1,8 +1,13 @@
 var canvas,gl,program;
 
 var models = {};
+var coins = {};
 var overlapMargin = 0.0002;
 var screenVisible = 0;
+var boundaryX = 0.64, boundaryY = 0.64;
+var friction = 1;
+var minSpeedLimit = 0.003;
+var collisionOffset = 0.02;
 
 var cameraMatrix = makeScale(1, 1, 1);
 var MVPMatrix = makeScale(1, 1, 1);
@@ -99,32 +104,113 @@ function Initialize()
   //**Assuming individual objects won't have any rotation!! To do this store separate matrices for each object
   // which would give us the individual scaling/rotation of each object. 
   //MVPMatrix = makePerspective(180 * (3.14/180), 1, 0, 5000);
-  makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 'boardinner.data');
-  makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data');
-  makeModel('boardouter2', 0, -0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data');
-  makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data');
-  makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data');
-  makeModel('boardline', 0, 0, -overlapMargin, 0.97, 0.97, 0.03, 'boardouter.data');
-  makeModel('boardline2', 0, 0, -2*overlapMargin, 0.95, 0.95, 0.03, 'boardinner.data');
-  makeModel('cylindercenter1', 0, 0, 0, 0.2, 0.2, 0.018, 'cylinder.data');
-  makeModel('cylindercenter2', 0, 0, 0, 0.185, 0.185, 0.018+overlapMargin, 'cylinderlight.data');
-  makeModel('cylinderside1', -0.45, -0.45, 0, 0.035, 0.035, 0.018, 'cylinder.data');
-  makeModel('cylinderside2', -0.45, -0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 'cylinderlight.data');
-  makeModel('cylinderside3', 0.45, -0.45, 0, 0.035, 0.035, 0.018, 'cylinder.data');
-  makeModel('cylinderside4', 0.45, -0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 'cylinderlight.data');
-  makeModel('cylinderside5', -0.45, 0.45, 0, 0.035, 0.035, 0.018, 'cylinder.data');
-  makeModel('cylinderside6', -0.45, 0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 'cylinderlight.data');
-  makeModel('cylinderside7', 0.45, 0.45, 0, 0.035, 0.035, 0.018, 'cylinder.data');
-  makeModel('cylinderside8', 0.45, 0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 'cylinderlight.data');
-  makeModel('goal1', -0.66, -0.66, 0, 0.055, 0.055, 0.018, 'cylinder.data');
-  makeModel('goal2', 0.66, -0.66, 0, 0.055, 0.055, 0.018, 'cylinder.data');
-  makeModel('goal3', -0.66, 0.66, 0, 0.055, 0.055, 0.018, 'cylinder.data');
-  makeModel('goal4', 0.66, 0.66, 0, 0.055, 0.055, 0.018, 'cylinder.data');
-  makeModel('goal1inner', -0.66, -0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 'cylindergrey.data');
-  makeModel('goal2inner', 0.66, -0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 'cylindergrey.data');
-  makeModel('goal3inner', -0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 'cylindergrey.data');
-  makeModel('goal4inner', 0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 'cylindergrey.data');
+  makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 0, 0, 0, 'boardinner.data', 0);
+  makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 0, 0, 0, 'boardouter.data', 0);
+  makeModel('boardouter2', 0, -0.75, 0, 1.6, 0.1, 0.15, 0, 0, 0, 'boardouter.data', 0);
+  makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 0, 0, 0,  'boardouter.data', 0);
+  makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 0, 0, 0, 'boardouter.data', 0);
+  makeModel('boardline', 0, 0, -overlapMargin, 0.97, 0.97, 0.03, 0, 0, 0, 'boardouter.data', 0);
+  makeModel('boardline2', 0, 0, -2*overlapMargin, 0.95, 0.95, 0.03, 0, 0, 0, 'boardinner.data', 0);
+  makeModel('cylindercenter1', 0, 0, 0, 0.2, 0.2, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylindercenter2', 0, 0, 0, 0.185, 0.185, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside1', -0.45, -0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside2', -0.45, -0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside3', 0.45, -0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside4', 0.45, -0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside5', -0.45, 0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside6', -0.45, 0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('cylinderside7', 0.45, 0.45, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('cylinderside8', 0.45, 0.45, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
+  makeModel('goal1', -0.66, -0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('goal2', 0.66, -0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('goal3', -0.66, 0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('goal4', 0.66, 0.66, 0, 0.055, 0.055, 0.018, 0, 0, 0, 'cylinder.data', 0);
+  makeModel('goal1inner', -0.66, -0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
+  makeModel('goal2inner', 0.66, -0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
+  makeModel('goal3inner', -0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
+  makeModel('goal4inner', 0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
+  makeModel('striker', 0, 0, -0.04, 0.05, 0.05, 0.015, 0.15, 0.15, 0, 'cylindergrey.data', 1);
+  makeModel('striker2', 0.08, 0.08, -0.04, 0.05, 0.05, 0.015, -0.15, 0.3, 0, 'cylinder.data', 1);
+  makeModel('striker3', -0.08, -0.08, -0.04, 0.05, 0.05, 0.015, -0.15, 0.3, 0, 'cylinder.data', 1);
+  makeModel('striker4', 0.08, -0.08, -0.04, 0.05, 0.05, 0.015, -0.15, 0.3, 0, 'cylinder.data', 1);
   setInterval(drawScene, 33); //30 fps
+}
+
+function isCollidingX(coin1, coin2){
+  //console.log(coin1['center'][0],coin2['center'][0]);
+  //console.log(coin1['scale'][0],coin2['scale'][0]);
+  if(coin1['center'][1]+coin1['scale'][1]/2 + collisionOffset >= coin2['center'][1]-coin2['scale'][1]/2 && coin1['center'][1]-coin1['scale'][1]/2 <= coin2['center'][1]+coin2['scale'][1]/2 + collisionOffset){
+    if(coin1['center'][0]+coin1['scale'][0]/2 + collisionOffset >= coin2['center'][0]-coin2['scale'][0]/2 && coin1['center'][0]-coin1['scale'][0]/2 <= coin2['center'][0]+coin2['scale'][0]/2 + collisionOffset)
+      return 1;
+  }
+  return 0;
+}
+
+function isCollidingY(coin1, coin2){
+  if(coin1['center'][0]+coin1['scale'][0]/2 + collisionOffset >= coin2['center'][0]-coin2['scale'][0]/2 && coin1['center'][0]-coin1['scale'][0]/2 <= coin2['center'][0]+coin2['scale'][0]/2 + collisionOffset){
+    if(coin1['center'][1]+coin1['scale'][1]/2 + collisionOffset >= coin2['center'][1]-coin2['scale'][1]/2 && coin1['center'][1]-coin1['scale'][1]/2 <= coin2['center'][1]+coin2['scale'][1]/2 + collisionOffset)
+      return 1;
+  }
+  return 0; 
+}
+
+function checkCollisions(){
+  for(var key1 in coins){
+    for(var key2 in coins){
+      if(key1 == key2 || key1 >= key2)
+        continue;
+      var coin1 = coins[key1];
+      var coin2 = coins[key2];
+      if(isCollidingX(coin1, coin2)){
+        coin1['center'][0] -= coin1['speed'][0];
+        coin2['center'][0] -= coin2['speed'][0];        
+        coin1['speed'][0] *= -0.9;
+        coin2['speed'][0] *= -0.9;
+      }
+      if(isCollidingY(coin1, coin2)){
+        coin1['center'][1] -= coin1['speed'][1];
+        coin2['center'][1] -= coin2['speed'][1];
+        coin1['speed'][1] *= -0.9;
+        coin2['speed'][1] *= -0.9;
+      }
+      coins[key1] = coin1;
+      coins[key2] = coin2;
+    }
+  }
+}
+
+function moveCoins(){
+  for(var key in coins){
+    var coin1 = coins[key];
+    //console.log(coin1['speed'][0], coin1['speed'][1]);
+    if (Math.abs(coin1['speed'][0]) <= minSpeedLimit){
+      coin1['speed'][0] = 0;
+    }
+    if (Math.abs(coin1['speed'][1]) <= minSpeedLimit){
+      coin1['speed'][1] = 0;
+    }
+    coin1['center'][0] += coin1['speed'][0];
+    if (coin1['center'][0] >= boundaryX){
+      coin1['center'][0] = boundaryX;
+      coin1['speed'][0] *= -0.7;
+    }
+    if (coin1['center'][0] <= -boundaryX){
+      coin1['center'][0] = -boundaryX;
+      coin1['speed'][0] *= -0.7;
+    }
+    coin1['center'][1] += coin1['speed'][1];
+    if (coin1['center'][1] >= boundaryY){
+      coin1['center'][1] = boundaryY;
+      coin1['speed'][1] *= -0.7;
+    }
+    if (coin1['center'][1] <= -boundaryY){
+      coin1['center'][1] = -boundaryY;
+      coin1['speed'][1] *= -0.7;
+    }
+    coin1['speed'][0] *= friction;
+    coin1['speed'][1] *= friction;
+    coins[key] = coin1;
+  }
 }
 
 var temp = 0;
@@ -158,16 +244,29 @@ var temp = 0.0;
 
 function drawScene(){
   screenVisible = 1;
+  checkCollisions();
+  moveCoins();
   for(var key in models){
     var model = models[key];
-    console.log(model);
+    //console.log(model);
+    temp += 0.05
+    //cameraMatrix = makeScale(0.56, 0.56, 0.56);
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+    MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
+    createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
+  }
+  for(var key in coins){
+    var model = coins[key];
+    //console.log(model);
     temp += 0.05
     cameraMatrix = makeScale(0.56, 0.56, 0.56);
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
     MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
-    createModel('cubex', model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['filedata'], model['filename']);
+    createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
 }
 
@@ -246,23 +345,23 @@ function makeScale(sx, sy, sz) {
   ];
 }
 
-function openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filename){
+function openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed_x, speed_y, speed_z, filename, iscoin){
   var datastring;
   $.ajax({
     url : filename,
     dataType: "text",
     success : function (data) {
       datastring = data;
-      createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, datastring, filename);
+      createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed_x, speed_y, speed_z, datastring, filename, iscoin);
     }
   });
 }
 
-function makeModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filename){
-  openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filename);
+function makeModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed_x, speed_y, speed_z, filename, iscoin){
+  openFile(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed_x, speed_y, speed_z, filename, iscoin);
 }
 
-function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filedata, filename) //Create object from blender
+function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed_x, speed_y, speed_z, filedata, filename, iscoin) //Create object from blender
 {
     var vertex_buffer_data = [];
     var color_buffer_data = [];
@@ -362,12 +461,17 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, filed
     gl.uniformMatrix4fv(u_matrix, false, MVPMatrix);
 
     //console.log(vertex_buffer_data);
-    console.log(vertex_buffer_data.length);
+    //console.log(vertex_buffer_data.length);
 
     // draw
     if (screenVisible == 1){
       gl.drawArrays(gl.TRIANGLES, 0, vertex_buffer_data.length/3);
     }
-    var mymodel = {'center':[x_pos,y_pos,z_pos], 'scale':[x_scale,y_scale,z_scale], 'name':name, 'filedata':filedata, 'filename':filename};
-    models[name] = mymodel;
+    var mymodel = {'center':[x_pos,y_pos,z_pos], 'scale':[x_scale,y_scale,z_scale], 'speed':[speed_x, speed_y, speed_z], 'name':name, 'filedata':filedata, 'filename':filename, 'iscoin':iscoin};
+    if (!iscoin){
+      models[name] = mymodel;
+    }
+    else{
+      coins[name] = mymodel;
+    }
 }
