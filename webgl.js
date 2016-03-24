@@ -1,6 +1,7 @@
 var canvas,gl,program;
 
 var models = {};
+var overlapMargin = 0.0002;
 
 var viewMatrix = makeScale(1, 1, 1);
 
@@ -99,12 +100,32 @@ function Initialize()
   viewMatrix = matrixMultiply(viewMatrix, makeYRotation(60 * (3.14/180)));
   viewMatrix = matrixMultiply(viewMatrix, makeXRotation(-40 * (3.14/180)));
   viewMatrix = matrixMultiply(viewMatrix, makeZToWMatrix(0.4));
-  makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 'boardinner.data')
-  makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data')
-  makeModel('boardouter2', 0, -0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data')
-  makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data')
-  makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data')
-  setInterval(drawScene, 50);
+  makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 'boardinner.data');
+  makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data');
+  makeModel('boardouter2', 0, -0.75, 0, 1.6, 0.1, 0.15, 'boardouter.data');
+  makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data');
+  makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 'boardouter.data');
+  makeModel('boardline', 0, 0, -overlapMargin, 1.05, 1.05, 0.03, 'boardouter.data');
+  makeModel('boardline2', 0, 0, -2*overlapMargin, 1.02, 1.02, 0.03, 'boardinner.data');
+  makeModel('cylindercenter1', 0, 0, 0, 0.2, 0.2, 0.018, 'cylinder.data');
+  makeModel('cylindercenter2', 0, 0, 0, 0.185, 0.185, 0.018+overlapMargin, 'cylinderlight.data');
+  makeModel('cylinderside1', -0.468, -0.472, 0, 0.05, 0.05, 0.018, 'cylinder.data');
+  makeModel('cylinderside2', -0.468, -0.472, 0, 0.04, 0.04, 0.018+overlapMargin, 'cylinderlight.data');
+  makeModel('cylinderside3', 0.475, -0.465, 0, 0.05, 0.05, 0.018, 'cylinder.data');
+  makeModel('cylinderside4', 0.475, -0.465, 0, 0.04, 0.04, 0.018+overlapMargin, 'cylinderlight.data');
+  makeModel('cylinderside5', -0.472, 0.465, 0, 0.05, 0.05, 0.018, 'cylinder.data');
+  makeModel('cylinderside6', -0.472, 0.465, 0, 0.04, 0.04, 0.018+overlapMargin, 'cylinderlight.data');
+  makeModel('cylinderside7', 0.462, 0.472, 0, 0.05, 0.05, 0.018, 'cylinder.data');
+  makeModel('cylinderside8', 0.462, 0.472, 0, 0.04, 0.04, 0.018+overlapMargin, 'cylinderlight.data');
+  makeModel('goal1', -0.62, -0.65, 0, 0.08, 0.08, 0.018, 'cylinder.data');
+  makeModel('goal2', 0.65, -0.62, 0, 0.08, 0.08, 0.018, 'cylinder.data');
+  makeModel('goal3', -0.65, 0.62, 0, 0.08, 0.08, 0.018, 'cylinder.data');
+  makeModel('goal4', 0.62, 0.65, 0, 0.08, 0.08, 0.018, 'cylinder.data');
+  makeModel('goal1inner', -0.62, -0.65, 0, 0.065, 0.065, 0.018+overlapMargin, 'cylindergrey.data');
+  makeModel('goal2inner', 0.65, -0.62, 0, 0.065, 0.065, 0.018+overlapMargin, 'cylindergrey.data');
+  makeModel('goal3inner', -0.65, 0.62, 0, 0.065, 0.065, 0.018+overlapMargin, 'cylindergrey.data');
+  makeModel('goal4inner', 0.62, 0.65, 0, 0.065, 0.065, 0.018+overlapMargin, 'cylindergrey.data');
+  setInterval(drawScene, 33); //30 fps
 }
 
 var temp = 0;
@@ -140,12 +161,12 @@ function drawScene(){
   for(var key in models){
     var model = models[key];
     console.log(model);
-    temp += 0.1
-    viewMatrix = makeScale(0.75, 0.75, 0.75);
+    temp += 0.05
+    viewMatrix = makeScale(0.74, 0.74, 0.74);
     viewMatrix = matrixMultiply(viewMatrix, makeXRotation(90 * (3.14/180)));
     viewMatrix = matrixMultiply(viewMatrix, makeYRotation(temp * (3.14/180)));
     viewMatrix = matrixMultiply(viewMatrix, makeXRotation(-40 * (3.14/180)));
-    viewMatrix = matrixMultiply(viewMatrix, makeZToWMatrix(0.4));
+    viewMatrix = matrixMultiply(viewMatrix, makeZToWMatrix(0.5));
     createModel('cubex', model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['filedata'], model['filename']);
   }
 }
