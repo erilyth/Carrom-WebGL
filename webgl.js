@@ -2,12 +2,14 @@ var canvas,gl,program;
 
 var models = {};
 var coins = {};
+
 var overlapMargin = 0.0002;
 var screenVisible = 0;
 var boundaryX = 0.64, boundaryY = 0.64;
-var friction = 1;
+var friction = 0.95;
 var minSpeedLimit = 0.003;
 var collisionOffset = 0.02;
+var collisionOffsetLimit = 0.02;
 
 var cameraMatrix = makeScale(1, 1, 1);
 var MVPMatrix = makeScale(1, 1, 1);
@@ -129,10 +131,10 @@ function Initialize()
   makeModel('goal2inner', 0.66, -0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   makeModel('goal3inner', -0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   makeModel('goal4inner', 0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
-  makeModel('striker', 0, 0, -0.04, 0.05, 0.05, 0.015, 0.15, 0.15, 0, 'cylindergrey.data', 1);
-  makeModel('striker2', 0.08, 0.08, -0.04, 0.05, 0.05, 0.015, -0.15, 0.3, 0, 'cylinder.data', 1);
-  makeModel('striker3', -0.08, -0.08, -0.04, 0.05, 0.05, 0.015, -0.15, 0.3, 0, 'cylinder.data', 1);
-  makeModel('striker4', 0.08, -0.08, -0.04, 0.05, 0.05, 0.015, -0.15, 0.3, 0, 'cylinder.data', 1);
+  makeModel('striker', 0, 0, -0.04, 0.05, 0.05, 0.01, 0.15, 0.15, 0, 'cylindergrey.data', 1);
+  makeModel('striker2', 0.08, 0.08, -0.03, 0.05, 0.05, 0.01, -0.15, 0.3, 0, 'cylinder.data', 1);
+  makeModel('striker3', -0.08, -0.08, -0.03, 0.05, 0.05, 0.01, -0.15, 0.3, 0, 'cylinder.data', 1);
+  makeModel('striker4', 0.08, -0.08, -0.03, 0.05, 0.05, 0.01, -0.15, 0.3, 0, 'cylinder.data', 1);
   setInterval(drawScene, 33); //30 fps
 }
 
@@ -163,15 +165,17 @@ function checkCollisions(){
       var coin2 = coins[key2];
       if(isCollidingX(coin1, coin2)){
         coin1['center'][0] -= coin1['speed'][0];
-        coin2['center'][0] -= coin2['speed'][0];        
-        coin1['speed'][0] *= -0.9;
-        coin2['speed'][0] *= -0.9;
+        coin2['center'][0] -= coin2['speed'][0];
+        var temp = coin1['speed'][0];
+        coin1['speed'][0] = 0.9*coin2['speed'][0];
+        coin2['speed'][0] = 0.9*temp;
       }
       if(isCollidingY(coin1, coin2)){
         coin1['center'][1] -= coin1['speed'][1];
         coin2['center'][1] -= coin2['speed'][1];
-        coin1['speed'][1] *= -0.9;
-        coin2['speed'][1] *= -0.9;
+        var temp = coin1['speed'][1];
+        coin1['speed'][1] = 0.9*coin2['speed'][1];
+        coin2['speed'][1] = 0.9*temp;
       }
       coins[key1] = coin1;
       coins[key2] = coin2;
@@ -194,19 +198,23 @@ function moveCoins(){
       coin1['center'][0] = boundaryX;
       coin1['speed'][0] *= -0.7;
     }
+    checkCollisions();
     if (coin1['center'][0] <= -boundaryX){
       coin1['center'][0] = -boundaryX;
       coin1['speed'][0] *= -0.7;
     }
+    checkCollisions();
     coin1['center'][1] += coin1['speed'][1];
     if (coin1['center'][1] >= boundaryY){
       coin1['center'][1] = boundaryY;
       coin1['speed'][1] *= -0.7;
     }
+    checkCollisions();
     if (coin1['center'][1] <= -boundaryY){
       coin1['center'][1] = -boundaryY;
       coin1['speed'][1] *= -0.7;
     }
+    checkCollisions();
     coin1['speed'][0] *= friction;
     coin1['speed'][1] *= friction;
     coins[key] = coin1;
@@ -244,16 +252,15 @@ var temp = 0.0;
 
 function drawScene(){
   screenVisible = 1;
-  checkCollisions();
   moveCoins();
   for(var key in models){
     var model = models[key];
     //console.log(model);
     temp += 0.05
-    //cameraMatrix = makeScale(0.56, 0.56, 0.56);
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+    cameraMatrix = makeScale(0.56, 0.56, 0.56);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
     MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
@@ -262,9 +269,9 @@ function drawScene(){
     //console.log(model);
     temp += 0.05
     cameraMatrix = makeScale(0.56, 0.56, 0.56);
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
     MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
