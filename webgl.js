@@ -7,13 +7,15 @@ var overlapMargin = 0.0002;
 var screenVisible = 0;
 var boundaryX = 0.64, boundaryY = 0.64;
 var friction = 0.95;
-var minSpeedLimit = 0.003;
-var collisionOffset = 0.02;
+var minSpeedLimit = 0.001;
+var collisionOffset = 0.033;
 var collisionOffsetLimit = 0.02;
 var startBoundary = 0.5;
+var mouseX=0, mouseY=0, mouseZ=0;
+var gamePhase = 0;
 
-var cameraMatrix = makeScale(1, 1, 1);
-var MVPMatrix = makeScale(1, 1, 1);
+var shootAngle = 90;
+var shootPower = 2; //Default parameters
 
 function initViewport(gl, canvas)
 {
@@ -97,7 +99,15 @@ function Initialize()
 {
 	canvas = document.getElementById("canvas");
 
-	gl = canvas.getContext("experimental-webgl");
+  canvas.addEventListener('mousedown', function(evt) {
+    mouseClick(canvas, evt);
+  }, false);
+	
+  canvas.addEventListener('mousemove', function(evt) {
+    getMousePos(canvas, evt);
+  }, false);
+
+  gl = canvas.getContext("experimental-webgl");
 	initViewport(gl, canvas);
 	// setup a GLSL program
 	program = createProgramFromScripts(gl,"2d-vertex-shader", "2d-fragment-shader");
@@ -153,7 +163,7 @@ function Initialize()
   makeModel('white4', radius*Math.cos(7 * angleOffset * (3.14/180)), radius*Math.sin(7 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
   makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
   
-  setInterval(drawScene, 33); //30 fps
+  setInterval(drawScene, 15); //(1000/15) fps
 }
 
 function isCollidingX(coin1, coin2){
@@ -266,7 +276,25 @@ function matrixMultiply(mat1, mat2){
   ];
 }
 
+function matrixMultiply4x1(mat1, mat2){
+  return [
+    mat1[0]*mat2[0]+mat1[1]*mat2[1]+mat1[2]*mat2[2]+mat1[3]*mat1[3],
+    mat1[4]*mat2[0]+mat1[5]*mat2[1]+mat1[6]*mat2[2]+mat1[7]*mat1[3],
+    mat1[8]*mat2[0]+mat1[9]*mat2[1]+mat1[10]*mat2[2]+mat1[11]*mat1[3],
+    mat1[12]*mat2[0]+mat1[13]*mat2[1]+mat1[14]*mat2[2]+mat1[15]*mat1[3]
+  ];
+}
+
 var temp = 0.0;
+
+function getCamera(){
+  var cameraMatrix = makeScale(1, 1, 1);
+  //cameraMatrix = makeScale(0.56, 0.56, 0.56);
+  //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+  //cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
+  //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+  return cameraMatrix;
+}
 
 function drawScene(){
   screenVisible = 1;
@@ -275,24 +303,106 @@ function drawScene(){
     var model = models[key];
     //console.log(model);
     temp += 0.05
-    cameraMatrix = makeScale(0.56, 0.56, 0.56);
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
-    MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
+    var cameraMatrix = getCamera();
+    var MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
   for(var key in coins){
     var model = coins[key];
     //console.log(model);
     //temp += 0.05
-    cameraMatrix = makeScale(0.56, 0.56, 0.56);
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
-    MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
+    var cameraMatrix = getCamera();
+    var MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
+}
+
+function mouseClick(canvas, evt){
+  var striker = coins["striker"];
+  var strikerPosOrig = striker['center'];
+  var strikerScale = striker['scale'];
+  var strikerPos = matrixMultiply4x1(getCamera(), [strikerPosOrig[0], strikerPosOrig[1], strikerPosOrig[2], 1]);
+  var mousePos = [mouseX, mouseY];
+  //console.log(strikerPos);
+  //console.log(mousePos);
+  if(gamePhase == 0){
+    if(mousePos[0] >= strikerPos[0]-strikerScale[0] && mousePos[0] <= strikerPos[0]+strikerScale[0] && mousePos[1] >= strikerPos[1]-strikerScale[1] && mousePos[1] <= strikerPos[1]+strikerScale[1]){
+      gamePhase = 1;
+      //console.log('hello');
+    }
+  }
+  else if(gamePhase == 1){
+    var angle = 0;
+    /*
+       0
+     -90 90
+      180
+    */
+    angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
+    shootAngle = 90 - angle*180/3.1415; //So that right is forward
+    shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
+      Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.2);
+    coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*3.1415/180);
+    coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*3.1415/180);
+    gamePhase = 0;
+    //console.log(shootAngle);
+  }
+}
+
+function getMousePos(canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+  var x = evt.clientX - rect.left;
+  var y = evt.clientY - rect.top;
+  //console.log(x, y);
+  mouseX = (x-325)/325;
+  mouseY = -(y-325)/325;
+  mouseZ = -0.03;
+}
+
+function matrixInverse(a)
+{
+    var s0 = a[0] * a[5] - a[4] * a[1];
+    var s1 = a[0] * a[6] - a[4] * a[2];
+    var s2 = a[0] * a[7] - a[4] * a[3];
+    var s3 = a[1] * a[6] - a[5] * a[2];
+    var s4 = a[1] * a[7] - a[5] * a[3];
+    var s5 = a[2] * a[7] - a[6] * a[3];
+
+    var c5 = a[10] * a[15] - a[14] * a[11];
+    var c4 = a[9] * a[15] - a[13] * a[11];
+    var c3 = a[9] * a[14] - a[13] * a[10];
+    var c2 = a[8] * a[15] - a[12] * a[11];
+    var c1 = a[8] * a[14] - a[12] * a[10];
+    var c0 = a[8] * a[13] - a[12] * a[9];
+
+    //console.log(c5,s5,s4);
+
+    // Should check for 0 determinant
+    var invdet = 1.0 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
+
+    var b = [[],[],[],[]];
+
+    b[0] = ( a[5] * c5 - a[6] * c4 + a[7] * c3) * invdet;
+    b[1] = (-a[1] * c5 + a[2] * c4 - a[3] * c3) * invdet;
+    b[2] = ( a[13] * s5 - a[14] * s4 + a[15] * s3) * invdet;
+    b[3] = (-a[9] * s5 + a[10] * s4 - a[11] * s3) * invdet;
+
+    b[4] = (-a[4] * c5 + a[6] * c2 - a[7] * c1) * invdet;
+    b[5] = ( a[0] * c5 - a[2] * c2 + a[3] * c1) * invdet;
+    b[6] = (-a[12] * s5 + a[14] * s2 - a[15] * s1) * invdet;
+    b[7] = ( a[8] * s5 - a[10] * s2 + a[11] * s1) * invdet;
+
+    b[8] = ( a[4] * c4 - a[5] * c2 + a[7] * c0) * invdet;
+    b[9] = (-a[0] * c4 + a[1] * c2 - a[3] * c0) * invdet;
+    b[10] = ( a[12] * s4 - a[13] * s2 + a[15] * s0) * invdet;
+    b[11] = (-a[8] * s4 + a[9] * s2 - a[11] * s0) * invdet;
+
+    b[12] = (-a[4] * c3 + a[5] * c1 - a[6] * c0) * invdet;
+    b[13] = ( a[0] * c3 - a[1] * c1 + a[2] * c0) * invdet;
+    b[14] = (-a[12] * s3 + a[13] * s1 - a[14] * s0) * invdet;
+    b[15] = ( a[8] * s3 - a[9] * s1 + a[10] * s0) * invdet;
+
+    return b;
 }
 
 function makePerspective(fieldOfViewInRadians, aspect, near, far) {
@@ -483,7 +593,7 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed
 
     var u_matrix = gl.getUniformLocation(program, "u_matrix");
     //matrix = matrixMultiply(matrix, makeYRotation(69 * (3.14/180)));
-    gl.uniformMatrix4fv(u_matrix, false, MVPMatrix);
+    gl.uniformMatrix4fv(u_matrix, false, getCamera());
 
     //console.log(vertex_buffer_data);
     //console.log(vertex_buffer_data.length);
