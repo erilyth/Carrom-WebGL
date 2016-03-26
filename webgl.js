@@ -9,12 +9,11 @@ var boundaryX = 0.64, boundaryY = 0.64;
 var friction = 0.95;
 var minSpeedLimit = 0.001;
 var collisionOffset = 0.033;
-var collisionOffsetLimit = 0.02;
 var startBoundary = 0.5;
 var mouseX=0, mouseY=0, mouseZ=0;
 var gamePhase = 0;
 
-var shootAngle = 90;
+var shootAngle = 0;
 var shootPower = 2; //Default parameters
 
 function initViewport(gl, canvas)
@@ -148,9 +147,9 @@ function Initialize()
   makeModel('goal3inner', -0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   makeModel('goal4inner', 0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   
-  makeModel('striker', -startBoundary, 0, -0.03, 0.05, 0.05, 0.01, 0, 0, 0, 'cylindergrey.data', 1);
+  makeModel('striker', 0, -startBoundary, -0.03, 0.05, 0.05, 0.01, 0, 0, 0, 'cylindergrey.data', 1);
 
-  var radius = 0.13;
+  var radius = 0.11;
   var angleOffset = 360/8; //6 is the number of coins to place
 
   makeModel('black1', radius*Math.cos(0 * angleOffset * (3.14/180)), radius*Math.sin(0 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
@@ -191,19 +190,47 @@ function checkCollisions(){
         continue;
       var coin1 = coins[key1];
       var coin2 = coins[key2];
-      if(isCollidingX(coin1, coin2)){
+      if(isCollidingX(coin1, coin2) || isCollidingY(coin1, coin2)){
         coin1['center'][0] -= coin1['speed'][0];
         coin2['center'][0] -= coin2['speed'][0];
-        var temp = coin1['speed'][0];
-        coin1['speed'][0] = 0.9*coin2['speed'][0];
-        coin2['speed'][0] = 0.9*temp;
-      }
-      if(isCollidingY(coin1, coin2)){
         coin1['center'][1] -= coin1['speed'][1];
         coin2['center'][1] -= coin2['speed'][1];
-        var temp = coin1['speed'][1];
-        coin1['speed'][1] = 0.9*coin2['speed'][1];
-        coin2['speed'][1] = 0.9*temp;
+        var speed1x = coin1['speed'][0];
+        var speed1y = coin1['speed'][1];
+        var speed2x = coin2['speed'][0];
+        var speed2y = coin2['speed'][1];
+        var slopecol = 10000000000; //Slope is infinity
+        if (coin2['center'][0] != coin1['center'][0]){
+          slopecol = (coin2['center'][1]-coin1['center'][1])/(coin2['center'][0]-coin1['center'][0]);
+        }
+        var slopeperp = 10000000000;
+        if(slopecol != 0)
+          slopeperp = -1/slopecol;
+        var anglecolx = Math.atan(slopecol);
+        var anglecoly = (90-anglecolx*(180/Math.PI))*(Math.PI/180);
+        var angleperpx = Math.atan(slopeperp);
+        var angleperpy = (90-angleperpx*(180/Math.PI))*(Math.PI/180);
+        var speed1col = speed2y*Math.cos(anglecoly) + speed2x*Math.cos(anglecolx);
+        var speed1perp = speed2y*Math.cos(angleperpy) + speed2x*Math.cos(angleperpx);
+        var speed2col = speed1y*Math.cos(anglecoly) + speed1x*Math.cos(anglecolx);
+        var speed2perp = speed1y*Math.cos(angleperpy) + speed1x*Math.cos(angleperpx);
+        var speed1xnew = speed1col*Math.cos(anglecolx) + speed1perp*Math.cos(angleperpx);
+        var speed1ynew = speed1col*Math.cos(anglecoly) + speed1perp*Math.cos(angleperpy);
+        var speed2xnew = speed2col*Math.cos(anglecolx) + speed2perp*Math.cos(angleperpx);
+        var speed2ynew = speed2col*Math.cos(anglecoly) + speed2perp*Math.cos(angleperpy);
+        //console.log(anglecolx*(180/Math.PI),anglecoly*(180/Math.PI), angleperpx*(180/Math.PI), angleperpy*(180/Math.PI));
+        //console.log('speed old',coin1['speed'][0],coin1['speed'][1], coin2['speed'][0], coin2['speed'][1]);
+        //console.log('speeds',speed1xnew,speed1ynew, speed2xnew, speed2ynew);
+        var own = 0.92;
+        var other = 1 - own;
+        coin1['speed'][0] = own*speed1xnew + other*speed2xnew;
+        coin1['speed'][1] = own*speed1ynew + other*speed2ynew;
+        coin2['speed'][0] = own*speed2xnew + other*speed1xnew;
+        coin2['speed'][1] = own*speed2ynew + other*speed1ynew;
+        coin1['center'][0] += speed1xnew;
+        coin2['center'][0] += speed2xnew;
+        coin1['center'][1] += speed1ynew;
+        coin2['center'][1] += speed2ynew;
       }
       coins[key1] = coin1;
       coins[key2] = coin2;
@@ -328,7 +355,6 @@ function mouseClick(canvas, evt){
   if(gamePhase == 0){
     if(mousePos[0] >= strikerPos[0]-strikerScale[0] && mousePos[0] <= strikerPos[0]+strikerScale[0] && mousePos[1] >= strikerPos[1]-strikerScale[1] && mousePos[1] <= strikerPos[1]+strikerScale[1]){
       gamePhase = 1;
-      //console.log('hello');
     }
   }
   else if(gamePhase == 1){
