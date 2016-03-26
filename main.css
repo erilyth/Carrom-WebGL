@@ -1,0 +1,20 @@
+@font-face {
+    font-family: 'Heading';
+    src: url('heading.ttf');
+}
+
+@font-face {
+    font-family: 'Content';
+    src: url('content.ttf');
+}
+
+.container {
+    position: relative;
+}
+ 
+#text {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: -1;
+}

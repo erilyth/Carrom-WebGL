@@ -1,4 +1,5 @@
 var canvas,gl,program;
+var textCtx, canvasText;
 
 var models = {};
 var coins = {};
@@ -113,6 +114,10 @@ function createProgramFromScripts(gl, vertexShaderId, fragmentShaderId) {
 
 function Initialize()
 {
+
+  canvasText = document.getElementById("text");
+  textCtx = canvasText.getContext("2d");
+
 	canvas = document.getElementById("canvas");
 
   canvas.addEventListener('mousedown', function(evt) {
@@ -438,6 +443,21 @@ function timer(){
 }
 
 function drawScene(){
+  textCtx.clearRect(0, 0, textCtx.canvas.width, textCtx.canvas.height);
+  textCtx.font="35px Heading";
+  textCtx.fillText("WebGL-Carrom", 200, 40);
+  textCtx.font="18px Content";
+  textCtx.fillText("Player 1", 80, 610);
+  textCtx.fillText("Player 2", 505, 610);
+  textCtx.font="30px Content";
+  textCtx.fillText(p1Score.toString(), 85, 640);
+  textCtx.fillText(p2Score.toString(), 513, 640);
+  textCtx.fillText("Player-"+(currentPlayer+1).toString(), 270, 620);
+  textCtx.font="18px Content";
+  if(currentPlayer == 0)
+    textCtx.fillText("(White)", 300, 640);
+  else
+    textCtx.fillText("(Black)", 300, 640);
   console.log(p1Score, p2Score);
   screenVisible = 1;
   moveCoins();
