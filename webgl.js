@@ -3,6 +3,19 @@ var canvas,gl,program;
 var models = {};
 var coins = {};
 
+var currentPlayer = 0;
+var bonusTurn = false;
+
+var p1blackScore = 0;
+var p1whiteScore = 0;
+var p1redScore = 0;
+
+var p2blackScore = 0;
+var p2whiteScore = 0;
+var p2redScore = 0;
+
+var redinPreviously = 0;
+
 var overlapMargin = 0.0002;
 var screenVisible = 0;
 var boundaryX = 0.64, boundaryY = 0.64;
@@ -238,7 +251,78 @@ function checkCollisions(){
   }
 }
 
+function allCoinsFrozen(){
+  for(var key in coins){
+    if (coins[key]['speed'][0] != 0 || coins[key]['speed'][1] != 0){
+      return 0;
+    } 
+  }
+  return 1;
+}
+
+function getScores(){
+  for(var key in coins){
+    if (Math.abs(coins[key]['center'][0]) >= 0.61 && Math.abs(coins[key]['center'][1]) >= 0.61){
+      bonusTurn = true;
+      if(coins[key]['name'][0]=='b'){
+        if(redinPreviously==1 || redinPreviously==2){
+          if(currentPlayer==0)
+            p1redScore += 1;
+          else
+            p2redScore += 1;
+        }
+        if(currentPlayer==0)
+          p1blackScore += 1;
+        else
+          p2blackScore += 1;
+        delete coins[key];
+      }
+      else if(coins[key]['name'][0]=='w'){
+        if(redinPreviously==1 || redinPreviously==2){
+          if(currentPlayer==0)
+            p1redScore += 1;
+          else
+            p2redScore += 1;
+        }
+        if(currentPlayer==0)
+          p1whiteScore += 1;
+        else
+          p2whiteScore += 1;
+        delete coins[key];
+      }
+      else if(coins[key]['name'][0]=='r'){
+        redinPreviously = 1;
+        delete coins[key];
+      }
+    }
+  }
+}
+
 function moveCoins(){
+  console.log(currentPlayer);
+  getScores();
+  if(gamePhase == 0){
+    var mousePos = [mouseX, mouseY];
+    coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,mousePos[0]));
+    coins['striker']['center'][1] = -startBoundary;
+  }
+  //Next turn
+  if(gamePhase == 2 && allCoinsFrozen()==1){
+    gamePhase = 0;
+    if(redinPreviously == 1){
+      redinPreviously = 2;
+    }
+    else if(redinPreviously == 2){
+      redinPreviously = 0;
+      if(p1redScore == 0 && p2redScore == 0){
+        makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
+      }
+    }
+    if(!bonusTurn){
+      currentPlayer = 1 - currentPlayer;
+    }
+    bonusTurn = false;
+  }
   for(var key in coins){
     var coin1 = coins[key];
     //console.log(coin1['speed'][0], coin1['speed'][1]);
@@ -353,9 +437,7 @@ function mouseClick(canvas, evt){
   //console.log(strikerPos);
   //console.log(mousePos);
   if(gamePhase == 0){
-    if(mousePos[0] >= strikerPos[0]-strikerScale[0] && mousePos[0] <= strikerPos[0]+strikerScale[0] && mousePos[1] >= strikerPos[1]-strikerScale[1] && mousePos[1] <= strikerPos[1]+strikerScale[1]){
-      gamePhase = 1;
-    }
+    gamePhase = 1;
   }
   else if(gamePhase == 1){
     var angle = 0;
@@ -370,7 +452,7 @@ function mouseClick(canvas, evt){
       Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.2);
     coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*3.1415/180);
     coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*3.1415/180);
-    gamePhase = 0;
+    gamePhase = 2; //The turn is in progress
     //console.log(shootAngle);
   }
 }
@@ -599,6 +681,14 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed
           color_buffer_data.push(1.0);
       }
     }
+
+    /*if(filename=="cylinder.data"){
+      var res = "";
+      for(var vertex in vertex_buffer_data){
+        res += vertex_buffer_data[vertex] + ", ";
+      }
+      console.log(res);
+    }*/
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
