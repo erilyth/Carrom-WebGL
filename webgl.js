@@ -14,7 +14,11 @@ var p2blackScore = 0;
 var p2whiteScore = 0;
 var p2redScore = 0;
 
+var p1Score = 100;
+var p2Score = 100;
+
 var redinPreviously = 0;
+var timerInterval;
 
 var overlapMargin = 0.0002;
 var screenVisible = 0;
@@ -176,6 +180,7 @@ function Initialize()
   makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
   
   setInterval(drawScene, 15); //(1000/15) fps
+  timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds
 }
 
 function isCollidingX(coin1, coin2){
@@ -183,7 +188,7 @@ function isCollidingX(coin1, coin2){
   //console.log(coin1['scale'][0],coin2['scale'][0]);
   if(coin1['center'][1]+coin1['scale'][1]/2 + collisionOffset >= coin2['center'][1]-coin2['scale'][1]/2 && coin1['center'][1]-coin1['scale'][1]/2 <= coin2['center'][1]+coin2['scale'][1]/2 + collisionOffset){
     if(coin1['center'][0]+coin1['scale'][0]/2 + collisionOffset >= coin2['center'][0]-coin2['scale'][0]/2 && coin1['center'][0]-coin1['scale'][0]/2 <= coin2['center'][0]+coin2['scale'][0]/2 + collisionOffset)
-      return 1;
+      return 1; 
   }
   return 0;
 }
@@ -263,35 +268,45 @@ function allCoinsFrozen(){
 function getScores(){
   for(var key in coins){
     if (Math.abs(coins[key]['center'][0]) >= 0.61 && Math.abs(coins[key]['center'][1]) >= 0.61){
-      bonusTurn = true;
       if(coins[key]['name'][0]=='b'){
         if(redinPreviously==1 || redinPreviously==2){
-          if(currentPlayer==0)
-            p1redScore += 1;
-          else
+          if(currentPlayer == 1){
             p2redScore += 1;
+            p2Score += 20;
+          }
         }
-        if(currentPlayer==0)
+        if(currentPlayer==0){
           p1blackScore += 1;
-        else
+          p1Score -= 20;
+        }
+        else{
           p2blackScore += 1;
+          p2Score += 5;
+          bonusTurn = true;
+        }
         delete coins[key];
       }
       else if(coins[key]['name'][0]=='w'){
         if(redinPreviously==1 || redinPreviously==2){
-          if(currentPlayer==0)
+          if(currentPlayer==0){
             p1redScore += 1;
-          else
-            p2redScore += 1;
+            p1Score += 20;
+          }
         }
-        if(currentPlayer==0)
+        if(currentPlayer==0){
           p1whiteScore += 1;
-        else
+          p1Score += 5;
+          bonusTurn = true;
+        }
+        else{
           p2whiteScore += 1;
+          p2Score -= 20;
+        }
         delete coins[key];
       }
       else if(coins[key]['name'][0]=='r'){
         redinPreviously = 1;
+        bonusTurn = true;
         delete coins[key];
       }
     }
@@ -299,7 +314,7 @@ function getScores(){
 }
 
 function moveCoins(){
-  console.log(currentPlayer);
+  //console.log(currentPlayer);
   getScores();
   if(gamePhase == 0){
     var mousePos = [mouseX, mouseY];
@@ -309,6 +324,12 @@ function moveCoins(){
   //Next turn
   if(gamePhase == 2 && allCoinsFrozen()==1){
     gamePhase = 0;
+    if(p1whiteScore + p1blackScore + p2whiteScore + p2blackScore == 8){
+      screenVisible = 0;
+      console.log('Game Over');
+    }
+    clearInterval(timerInterval);
+    timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds
     if(redinPreviously == 1){
       redinPreviously = 2;
     }
@@ -407,7 +428,17 @@ function getCamera(){
   return cameraMatrix;
 }
 
+function timer(){
+  if(currentPlayer==0){
+    p1Score -= 1;
+  }
+  else{
+    p2Score -= 1;
+  }
+}
+
 function drawScene(){
+  console.log(p1Score, p2Score);
   screenVisible = 1;
   moveCoins();
   for(var key in models){
