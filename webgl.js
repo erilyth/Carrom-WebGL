@@ -33,9 +33,10 @@ var mouseX=0, mouseY=0, mouseZ=0;
 var gamePhase = 0;
 var cameraMode = 0;
 var playerCanPlay = 1;
+var controls = 0; //If 0 then mouse controls, if 1 then keyboard controls
 
 var shootAngle = 0;
-var shootPower = 2; //Default parameters
+var shootPower = 0.2; //Default parameters
 
 var temp = 0; //For the camera mode 2 rotation
 
@@ -142,7 +143,7 @@ function Initialize()
   //Set this MVPMatrix before calling the makeModel function, this can be treated as the camera.
   //**Assuming individual objects won't have any rotation!! To do this store separate matrices for each object
   // which would give us the individual scaling/rotation of each object. 
-  //MVPMatrix = makePerspective(180 * (3.14/180), 1, 0, 5000);
+  //MVPMatrix = makePerspective(180 * (Math.PI/180), 1, 0, 5000);
   makeModel('boardinner', 0, 0, 0, 1.5, 1.5, 0.03, 0, 0, 0, 'boardinner.data', 0);
   
   makeModel('boardouter1', 0, 0.75, 0, 1.6, 0.1, 0.15, 0, 0, 0, 'boardouter.data', 0);
@@ -179,14 +180,14 @@ function Initialize()
   var radius = 0.11;
   var angleOffset = 360/8; //6 is the number of coins to place
 
-  makeModel('black1', radius*Math.cos(0 * angleOffset * (3.14/180)), radius*Math.sin(0 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
-  makeModel('white1', radius*Math.cos(1 * angleOffset * (3.14/180)), radius*Math.sin(1 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
-  makeModel('black2', radius*Math.cos(2 * angleOffset * (3.14/180)), radius*Math.sin(2 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
-  makeModel('white2', radius*Math.cos(3 * angleOffset * (3.14/180)), radius*Math.sin(3 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
-  makeModel('black3', radius*Math.cos(4 * angleOffset * (3.14/180)), radius*Math.sin(4 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
-  makeModel('white3', radius*Math.cos(5 * angleOffset * (3.14/180)), radius*Math.sin(5 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
-  makeModel('black4', radius*Math.cos(6 * angleOffset * (3.14/180)), radius*Math.sin(6 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
-  makeModel('white4', radius*Math.cos(7 * angleOffset * (3.14/180)), radius*Math.sin(7 * angleOffset * (3.14/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black1', radius*Math.cos(0 * angleOffset * (Math.PI/180)), radius*Math.sin(0 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white1', radius*Math.cos(1 * angleOffset * (Math.PI/180)), radius*Math.sin(1 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black2', radius*Math.cos(2 * angleOffset * (Math.PI/180)), radius*Math.sin(2 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white2', radius*Math.cos(3 * angleOffset * (Math.PI/180)), radius*Math.sin(3 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black3', radius*Math.cos(4 * angleOffset * (Math.PI/180)), radius*Math.sin(4 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white3', radius*Math.cos(5 * angleOffset * (Math.PI/180)), radius*Math.sin(5 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
+  makeModel('black4', radius*Math.cos(6 * angleOffset * (Math.PI/180)), radius*Math.sin(6 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinblack.data', 1);
+  makeModel('white4', radius*Math.cos(7 * angleOffset * (Math.PI/180)), radius*Math.sin(7 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
   makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
   
   setInterval(drawScene, 15); //(1000/15) fps
@@ -209,8 +210,86 @@ function Initialize()
       cameraMode = 3;
       temp = 0;
     }
+    else if(event.keyCode == 57){ //Key '9'
+      if(gamePhase != 1.5){
+        controls = 0; //Enable mouse control
+      }
+      else{
+        alert("Cannot switch controls during turn");
+      }
+    }
+    else if(event.keyCode == 48){ //Key '0'
+      controls = 1; //Enable keyboard control
+    }
+    else if(event.keyCode == 37) {
+      if(controls == 1){
+        if(gamePhase == 0){
+          coins['striker']['center'][0] -= 0.05;
+          coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,coins['striker']['center'][0]));
+        }
+        if(gamePhase == 1){
+          shootAngle += 5;
+        }
+      }
+    }
     else if(event.keyCode == 39) {
-        alert('Right was pressed');
+      if(controls == 1){
+        if(gamePhase == 0){
+          coins['striker']['center'][0] += 0.05;
+          coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,coins['striker']['center'][0]));
+        }
+        if(gamePhase == 1){
+          shootAngle -= 5;
+        }
+      }
+    }
+    else if(event.keyCode == 40) {
+      if(controls == 1){
+        if(gamePhase == 1.5){
+          shootPower -= 0.01;
+          shootPower = Math.max(shootPower, 0);
+        }
+      }
+    }
+    else if(event.keyCode == 38) {
+      if(controls == 1){
+        if(gamePhase == 1.5){
+          shootPower += 0.01;
+          shootPower = Math.min(shootPower, 0.2);
+        }
+      }
+    }
+    else if(event.keyCode == 13) {
+      if(gamePhase == 0){
+        gamePhase = 1;
+        shootAngle = 90;
+        shootPower = 0;
+      }
+      else if(gamePhase == 1){
+        if(controls == 0){
+            var angle = 0;
+            /*
+               0
+             -90 90
+              180
+            */
+            angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
+            shootAngle = 90 - angle*180/Math.PI; //So that right is forward
+            shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
+              Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.2);
+            coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
+            coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+            gamePhase = 2; //The turn is in progress
+        }
+        else{
+          gamePhase = 1.5;
+        }
+      }
+      else if(gamePhase == 1.5){
+        coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
+        coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+        gamePhase = 2;
+      }
     }
   });
 
@@ -349,7 +428,7 @@ function getScores(){
 function moveCoins(){
   //console.log(currentPlayer);
   getScores();
-  if(gamePhase == 0){
+  if(gamePhase == 0 && playerCanPlay && controls == 0){
     var mousePos = [mouseX, mouseY];
     coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,mousePos[0]));
     coins['striker']['center'][1] = -startBoundary;
@@ -357,6 +436,8 @@ function moveCoins(){
   //Next turn
   if(gamePhase == 2 && allCoinsFrozen()==1){
     gamePhase = 0;
+    coins['striker']['center'][0] = 0;
+    coins['striker']['center'][1] = -startBoundary;
     if(p1whiteScore + p1blackScore + p2whiteScore + p2blackScore == 8){
       screenVisible = 0;
       console.log('Game Over');
@@ -457,22 +538,22 @@ function getCamera(){
   else if(cameraMode == 1){
     playerCanPlay = 1;
     cameraMatrix = makeScale(0.7, 0.7, 0.7);
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(50 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(50 * (Math.PI/180)));
   }
   else if(cameraMode == 2){
     temp += 0.02;
     playerCanPlay = 0;
     cameraMatrix = makeScale(0.58, 0.58, 0.58);
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (Math.PI/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (Math.PI/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (Math.PI/180)));
   }
   else if(cameraMode == 3 && Object.keys(coins).length == 10){
     playerCanPlay = 0;
     cameraMatrix = makeScale(0.58, 0.58, 0.58);
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(180 * (3.14/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-15 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (Math.PI/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(180 * (Math.PI/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-15 * (Math.PI/180)));
     cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(0,0,-0.4));
     //cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(coins['striker']['center'][0],coins['striker']['center'][1],coins['striker']['center'][2]));
   }
@@ -505,6 +586,12 @@ function drawScene(){
     textCtx.fillText("(White)", 300, 640);
   else
     textCtx.fillText("(Black)", 300, 640);
+  if(controls == 1){
+    textCtx.fillText("Angle:", 590, 230);
+    textCtx.fillText("Power:", 590, 270);
+    textCtx.fillText((Math.round(shootPower*100)/100).toString(), 595, 290);
+    textCtx.fillText((Math.round(shootAngle*100)/100).toString(), 600, 250);
+  }
   //console.log(p1Score, p2Score);
   screenVisible = 1;
   moveCoins();
@@ -525,7 +612,7 @@ function drawScene(){
 }
 
 function mouseClick(canvas, evt){
-  if(!playerCanPlay){
+  if(!playerCanPlay || controls == 1){
     return;
   }
   var striker = coins["striker"];
@@ -546,11 +633,11 @@ function mouseClick(canvas, evt){
       180
     */
     angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
-    shootAngle = 90 - angle*180/3.1415; //So that right is forward
+    shootAngle = 90 - angle*180/Math.PI; //So that right is forward
     shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
       Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.2);
-    coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*3.1415/180);
-    coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*3.1415/180);
+    coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
+    coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
     gamePhase = 2; //The turn is in progress
     //console.log(shootAngle);
   }
@@ -807,7 +894,7 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed
     gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
     var u_matrix = gl.getUniformLocation(program, "u_matrix");
-    //matrix = matrixMultiply(matrix, makeYRotation(69 * (3.14/180)));
+    //matrix = matrixMultiply(matrix, makeYRotation(69 * (Math.PI/180)));
     gl.uniformMatrix4fv(u_matrix, false, getCamera());
 
     //console.log(vertex_buffer_data);
