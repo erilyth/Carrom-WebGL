@@ -440,6 +440,19 @@ function getScores(){
         bonusTurn = true;
         delete coins[key];
       }
+      else if(coins[key]['name'][0]=='s'){
+        if(currentPlayer==0){
+          p1Score -= 5; //For the striker going into the hole
+        }
+        else{
+          p2Score -= 5;
+        }
+        coins[key]['center'][0] = 0;
+        coins[key]['center'][1] = -startBoundary;
+        coins[key]['speed'][0] = 0;
+        coins[key]['speed'][1] = 0;
+        coins[key]['speed'][2] = 0;
+      }
     }
   }
 }
