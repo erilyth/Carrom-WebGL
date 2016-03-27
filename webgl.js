@@ -4,6 +4,7 @@ var textCtx, canvasText;
 var models = {};
 var coins = {};
 
+var gameInitialized = false;
 var currentPlayer = 0;
 var bonusTurn = false;
 
@@ -176,7 +177,7 @@ function Initialize()
   makeModel('goal3inner', -0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   makeModel('goal4inner', 0.66, 0.66, 0, 0.05, 0.05, 0.018+overlapMargin, 0, 0, 0, 'cylindergrey.data', 0);
   
-  makeModel('striker', 0, -startBoundary, -0.03, 0.05, 0.05, 0.01, 0, 0, 0, 'cylindergrey.data', 1);
+  makeModel('striker', 0, -startBoundary, -0.03, 0.05, 0.05, 0.01, 0, 0, 0, 'striker.data', 1);
 
   var radius = 0.11;
   var angleOffset = 360/8; //6 is the number of coins to place
@@ -193,6 +194,8 @@ function Initialize()
   
   setInterval(drawScene, 15); //(1000/15) fps
   timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds
+
+  gameInitialized = true;
 
   document.addEventListener('keydown', function(event) {
     if(event.keyCode == 49) {
@@ -564,7 +567,10 @@ function getCamera(){
     cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (Math.PI/180)));
     cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (Math.PI/180)));
   }
-  else if(cameraMode == 3 && Object.keys(coins).length == 10){
+  else if(cameraMode == 3 && (Object.keys(coins).length == 10  || gameInitialized == true)){
+    if(Object.keys(coins).length == 10){
+      gameInitialized = true;
+    }
     playerCanPlay = 0;
     cameraMatrix = makeScale(1.5, 1.5, 1.5);
     var striker = coins['striker'];
