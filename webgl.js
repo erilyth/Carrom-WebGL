@@ -296,6 +296,8 @@ function Initialize()
         shootPower = 0;
       }
       else if(gamePhase == 1){
+        var mousePos = [mouseX, mouseY];
+        var strikerPos = coins['striker']['center'];
         if(controls == 0){
             var angle = 0;
             /*
