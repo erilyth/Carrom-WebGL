@@ -39,6 +39,7 @@ var shootAngle = 0;
 var shootPower = 0.2; //Default parameters
 
 var temp = 0; //For the camera mode 2 rotation
+var currentCoinFocus = 1;
 
 function initViewport(gl, canvas)
 {
@@ -204,10 +205,25 @@ function Initialize()
     }
     else if(event.keyCode == 51){
       cameraMode = 2;
+      if(gamePhase != 1.5){
+        controls = 1;
+      }
       temp = 0;
     }
     else if(event.keyCode == 52){
+      if(cameraMode != 3){
+        currentCoinFocus = 1;
+      }
+      else{
+        currentCoinFocus += 1;
+        if(currentCoinFocus == 10){
+          currentCoinFocus = 1;
+        }
+      }
       cameraMode = 3;
+      if(gamePhase != 1.5){
+        controls = 1;
+      }
       temp = 0;
     }
     else if(event.keyCode == 57){ //Key '9'
@@ -550,12 +566,23 @@ function getCamera(){
   }
   else if(cameraMode == 3 && Object.keys(coins).length == 10){
     playerCanPlay = 0;
-    cameraMatrix = makeScale(0.58, 0.58, 0.58);
+    cameraMatrix = makeScale(1.5, 1.5, 1.5);
+    var striker = coins['striker'];
+    var coin;
+    if(currentCoinFocus == 1) {coin = coins['black1'];}
+    if(currentCoinFocus == 2) {coin = coins['white1'];}
+    if(currentCoinFocus == 3) {coin = coins['black2'];}
+    if(currentCoinFocus == 4) {coin = coins['white2'];}
+    if(currentCoinFocus == 5) {coin = coins['black3'];}
+    if(currentCoinFocus == 6) {coin = coins['white3'];}
+    if(currentCoinFocus == 7) {coin = coins['black4'];}
+    if(currentCoinFocus == 8) {coin = coins['white4'];}
+    if(currentCoinFocus == 9) {coin = coins['red'];}
+    var angle = Math.atan2(coin['center'][1]-striker['center'][1], coin['center'][0]-striker['center'][0])*(180/Math.PI);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(-coin['center'][0]-0.2*Math.cos((angle+90) * (Math.PI/180)),-coin['center'][1]-0.2*Math.sin((angle+90) * (Math.PI/180)),0));
     cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (Math.PI/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(180 * (Math.PI/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-15 * (Math.PI/180)));
-    cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(0,0,-0.4));
-    //cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(coins['striker']['center'][0],coins['striker']['center'][1],coins['striker']['center'][2]));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation((angle+90) * (Math.PI/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (Math.PI/180)));
   }
   cameraMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
   return cameraMatrix;
@@ -587,10 +614,10 @@ function drawScene(){
   else
     textCtx.fillText("(Black)", 300, 640);
   if(controls == 1){
-    textCtx.fillText("Angle:", 590, 230);
-    textCtx.fillText("Power:", 590, 270);
-    textCtx.fillText((Math.round(shootPower*100)/100).toString(), 595, 290);
-    textCtx.fillText((Math.round(shootAngle*100)/100).toString(), 600, 250);
+    textCtx.fillText("Angle:", 590, 130);
+    textCtx.fillText("Power:", 590, 170);
+    textCtx.fillText((Math.round(shootPower*100)/100).toString(), 595, 190);
+    textCtx.fillText((Math.round(shootAngle*100)/100).toString(), 600, 150);
   }
   //console.log(p1Score, p2Score);
   screenVisible = 1;
@@ -612,7 +639,7 @@ function drawScene(){
 }
 
 function mouseClick(canvas, evt){
-  if(!playerCanPlay || controls == 1){
+  if(!playerCanPlay && controls == 0){
     return;
   }
   var striker = coins["striker"];
