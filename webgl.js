@@ -3,6 +3,7 @@ var textCtx, canvasText;
 
 var models = {};
 var coins = {};
+var alive = {};
 
 var gameInitialized = false;
 var currentPlayer = 0;
@@ -192,6 +193,16 @@ function Initialize()
   makeModel('white4', radius*Math.cos(7 * angleOffset * (Math.PI/180)), radius*Math.sin(7 * angleOffset * (Math.PI/180)), -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinwhite.data', 1);
   makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
   
+  alive['red'] = true;
+  alive['white1'] = true;
+  alive['black1'] = true;
+  alive['white2'] = true;
+  alive['black2'] = true;
+  alive['white3'] = true;
+  alive['black3'] = true;
+  alive['white4'] = true;
+  alive['black4'] = true;
+
   setInterval(drawScene, 15); //(1000/15) fps
   timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds
 
@@ -335,7 +346,7 @@ function isCollidingY(coin1, coin2){
 function checkCollisions(){
   for(var key1 in coins){
     for(var key2 in coins){
-      if(key1 == key2 || key1 >= key2)
+      if(key1 == key2 || key1 >= key2 || alive[key1]==false || alive[key2]==false)
         continue;
       var coin1 = coins[key1];
       var coin2 = coins[key2];
@@ -397,48 +408,102 @@ function allCoinsFrozen(){
 }
 
 function getScores(){
+  var placeOffset = 0.73;
   for(var key in coins){
+    if(alive[key]==false){
+      continue;
+    }
     if (Math.abs(coins[key]['center'][0]) >= 0.61 && Math.abs(coins[key]['center'][1]) >= 0.61){
       if(coins[key]['name'][0]=='b'){
         if(redinPreviously==1 || redinPreviously==2){
           if(currentPlayer == 1){
             p2redScore += 1;
             p2Score += 20;
+            var p1Coins = p1blackScore + p1whiteScore + p1redScore;
+            var p2Coins = p2blackScore + p2whiteScore + p2redScore;
+            coins['red']['center'][0] = placeOffset - p2Coins * 0.1;
+            coins['red']['center'][1] = -placeOffset;
+            coins['red']['center'][2] = -0.08;
+            coins['red']['speed'][0] = 0;
+            coins['red']['speed'][1] = 0;
+            alive['red'] = false;
           }
         }
         if(currentPlayer==0){
           p1blackScore += 1;
           p1Score -= 20;
+          var p1Coins = p1blackScore + p1whiteScore + p1redScore;
+          var p2Coins = p2blackScore + p2whiteScore + p2redScore;
+          coins[key]['center'][0] = -placeOffset + p1Coins * 0.1;
+          coins[key]['center'][1] = -placeOffset;
+          coins[key]['center'][2] = -0.08;
+          coins[key]['speed'][0] = 0;
+          coins[key]['speed'][1] = 0;
+          alive[key] = false;
         }
         else{
           p2blackScore += 1;
           p2Score += 5;
+          var p1Coins = p1blackScore + p1whiteScore + p1redScore;
+          var p2Coins = p2blackScore + p2whiteScore + p2redScore;
+          coins[key]['center'][0] = placeOffset - p2Coins * 0.1;
+          coins[key]['center'][1] = -placeOffset;
+          coins[key]['center'][2] = -0.08;
+          coins[key]['speed'][0] = 0;
+          coins[key]['speed'][1] = 0;
+          alive[key] = false;
           bonusTurn = true;
         }
-        delete coins[key];
       }
       else if(coins[key]['name'][0]=='w'){
         if(redinPreviously==1 || redinPreviously==2){
           if(currentPlayer==0){
             p1redScore += 1;
             p1Score += 20;
+            var p1Coins = p1blackScore + p1whiteScore + p1redScore;
+            var p2Coins = p2blackScore + p2whiteScore + p2redScore;
+            coins['red']['center'][0] = -placeOffset + p2Coins * 0.1;
+            coins['red']['center'][1] = -placeOffset;
+            coins['red']['center'][2] = -0.08;
+            coins['red']['speed'][0] = 0;
+            coins['red']['speed'][1] = 0;
+            alive['red'] = false;
           }
         }
         if(currentPlayer==0){
           p1whiteScore += 1;
           p1Score += 5;
+          var p1Coins = p1blackScore + p1whiteScore + p1redScore;
+          var p2Coins = p2blackScore + p2whiteScore + p2redScore;
+          coins[key]['center'][0] = -placeOffset + p1Coins * 0.1;
+          coins[key]['center'][1] = -placeOffset;
+          coins[key]['center'][2] = -0.08;
+          coins[key]['speed'][0] = 0;
+          coins[key]['speed'][1] = 0;
+          alive[key] = false;
           bonusTurn = true;
         }
         else{
           p2whiteScore += 1;
           p2Score -= 20;
+          var p1Coins = p1blackScore + p1whiteScore + p1redScore;
+          var p2Coins = p2blackScore + p2whiteScore + p2redScore;
+          coins[key]['center'][0] = placeOffset - p2Coins * 0.1;
+          coins[key]['center'][1] = -placeOffset;
+          coins[key]['center'][2] = -0.08;
+          coins[key]['speed'][0] = 0;
+          coins[key]['speed'][1] = 0;
+          alive[key] = false;
         }
-        delete coins[key];
       }
       else if(coins[key]['name'][0]=='r'){
         redinPreviously = 1;
         bonusTurn = true;
-        delete coins[key];
+        coins[key]['center'][0] = 100;
+        coins[key]['center'][1] = 100;
+        alive['red'] = false;
+        coins[key]['speed'][0] = 0;
+        coins[key]['speed'][1] = 0;
       }
       else if(coins[key]['name'][0]=='s'){
         if(currentPlayer==0){
@@ -482,7 +547,9 @@ function moveCoins(){
     else if(redinPreviously == 2){
       redinPreviously = 0;
       if(p1redScore == 0 && p2redScore == 0){
-        makeModel('red', 0, 0, -0.03, 0.04, 0.04, 0.01, 0, 0, 0, 'coinred.data', 1);
+        coins['red']['center'][0] = 0;
+        coins['red']['center'][1] = 0;
+        alive['red'] = true;
       }
     }
     if(!bonusTurn){
@@ -491,6 +558,10 @@ function moveCoins(){
     bonusTurn = false;
   }
   for(var key in coins){
+    if(alive[key] == false){
+      //console.log("False");
+      continue;
+    }
     var coin1 = coins[key];
     //console.log(coin1['speed'][0], coin1['speed'][1]);
     if (Math.abs(coin1['speed'][0]) <= minSpeedLimit){
