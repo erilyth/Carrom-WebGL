@@ -29,10 +29,15 @@ var minSpeedLimit = 0.001;
 var collisionOffset = 0.033;
 var startBoundary = 0.5;
 var mouseX=0, mouseY=0, mouseZ=0;
+
 var gamePhase = 0;
+var cameraMode = 0;
+var playerCanPlay = 1;
 
 var shootAngle = 0;
 var shootPower = 2; //Default parameters
+
+var temp = 0; //For the camera mode 2 rotation
 
 function initViewport(gl, canvas)
 {
@@ -186,6 +191,29 @@ function Initialize()
   
   setInterval(drawScene, 15); //(1000/15) fps
   timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds
+
+  document.addEventListener('keydown', function(event) {
+    if(event.keyCode == 49) {
+      cameraMode = 0;
+      temp = 0;
+    }
+    else if(event.keyCode == 50){
+      cameraMode = 1;
+      temp = 0;
+    }
+    else if(event.keyCode == 51){
+      cameraMode = 2;
+      temp = 0;
+    }
+    else if(event.keyCode == 52){
+      cameraMode = 3;
+      temp = 0;
+    }
+    else if(event.keyCode == 39) {
+        alert('Right was pressed');
+    }
+  });
+
 }
 
 function isCollidingX(coin1, coin2){
@@ -386,8 +414,6 @@ function moveCoins(){
   }
 }
 
-var temp = 0;
-
 // 0 1 2 3        0 1 2 3
 // 4 5 6 7        4 5 6 7
 // 8 9 10 11      8 9 10 11
@@ -422,14 +448,35 @@ function matrixMultiply4x1(mat1, mat2){
   ];
 }
 
-var temp = 0.0;
-
 function getCamera(){
   var cameraMatrix = makeScale(1, 1, 1);
-  //cameraMatrix = makeScale(0.56, 0.56, 0.56);
-  //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
-  //cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
-  //cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+  if(cameraMode == 0){
+    playerCanPlay = 1;
+    cameraMatrix = makeScale(0.9, 0.9, 0.9);
+  }
+  else if(cameraMode == 1){
+    playerCanPlay = 1;
+    cameraMatrix = makeScale(0.7, 0.7, 0.7);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(50 * (3.14/180)));
+  }
+  else if(cameraMode == 2){
+    temp += 0.02;
+    playerCanPlay = 0;
+    cameraMatrix = makeScale(0.58, 0.58, 0.58);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (3.14/180)));
+  }
+  else if(cameraMode == 3 && Object.keys(coins).length == 10){
+    playerCanPlay = 0;
+    cameraMatrix = makeScale(0.58, 0.58, 0.58);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(180 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-15 * (3.14/180)));
+    cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(0,0,-0.4));
+    //cameraMatrix = matrixMultiply(cameraMatrix, makeTranslation(coins['striker']['center'][0],coins['striker']['center'][1],coins['striker']['center'][2]));
+  }
+  cameraMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
   return cameraMatrix;
 }
 
@@ -458,28 +505,29 @@ function drawScene(){
     textCtx.fillText("(White)", 300, 640);
   else
     textCtx.fillText("(Black)", 300, 640);
-  console.log(p1Score, p2Score);
+  //console.log(p1Score, p2Score);
   screenVisible = 1;
   moveCoins();
   for(var key in models){
     var model = models[key];
     //console.log(model);
-    temp += 0.05
     var cameraMatrix = getCamera();
-    var MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
+    var MVPMatrix = cameraMatrix;
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
   for(var key in coins){
     var model = coins[key];
     //console.log(model);
-    //temp += 0.05
     var cameraMatrix = getCamera();
-    var MVPMatrix = matrixMultiply(cameraMatrix, makeZToWMatrix(0.9));
+    var MVPMatrix = cameraMatrix;
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
 }
 
 function mouseClick(canvas, evt){
+  if(!playerCanPlay){
+    return;
+  }
   var striker = coins["striker"];
   var strikerPosOrig = striker['center'];
   var strikerScale = striker['scale'];
