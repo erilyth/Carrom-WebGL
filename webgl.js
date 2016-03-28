@@ -44,6 +44,10 @@ var shootPower = 0.2; //Default parameters
 var temp = 0; //For the camera mode 2 rotation
 var currentCoinFocus = 1;
 
+var coincollideSound = new Audio('sounds/coincollide.mp3');
+var coingoalSound = new Audio('sounds/finish.mp3');
+var coinfailSound = new Audio('sounds/fail.wav');
+
 function initViewport(gl, canvas)
 {
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -309,7 +313,7 @@ function Initialize()
             angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
             shootAngle = 90 - angle*180/Math.PI; //So that right is forward
             shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
-              Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.2);
+              Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
             coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
             coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
             gamePhase = 2; //The turn is in progress
@@ -325,7 +329,6 @@ function Initialize()
       }
     }
   });
-
 }
 
 function isCollidingX(coin1, coin2){
@@ -418,6 +421,8 @@ function checkCollisions(){
       var coin1 = coins[key1];
       var coin2 = coins[key2];
       if(isCollidingX(coin1, coin2) || isCollidingY(coin1, coin2)){
+        //if(Math.abs(coin1['speed'][0])+Math.abs(coin1['speed'][1])+Math.abs(coin2['speed'][0])+Math.abs(coin2['speed'][1]) >= 0.05)
+        //  playSound();
         reactToCollision(coin1, coin2);
       }
     }
@@ -431,6 +436,19 @@ function allCoinsFrozen(){
     } 
   }
   return 1;
+}
+
+function playSound(sound){
+  if(sound == 'collide'){
+    coincollideSound.play();
+  }
+  if(sound == 'goal'){
+    coingoalSound.volume = 0.6;
+    coingoalSound.play();
+  }
+  if(sound == 'fail'){
+    coinfailSound.play();
+  }
 }
 
 function getScores(){
@@ -532,6 +550,7 @@ function getScores(){
         coins[key]['speed'][1] = 0;
       }
       else if(coins[key]['name'][0]=='s'){
+        playSound('fail');
         if(currentPlayer==0){
           p1Score -= 5; //For the striker going into the hole
         }
@@ -543,6 +562,9 @@ function getScores(){
         coins[key]['speed'][0] = 0;
         coins[key]['speed'][1] = 0;
         coins[key]['speed'][2] = 0;
+      }
+      if(coins[key]['name'][0] != 's'){
+        playSound('goal');
       }
     }
   }
@@ -778,7 +800,7 @@ function mouseClick(canvas, evt){
     angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
     shootAngle = 90 - angle*180/Math.PI; //So that right is forward
     shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
-      Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.2);
+      Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
     coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
     coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
     gamePhase = 2; //The turn is in progress
