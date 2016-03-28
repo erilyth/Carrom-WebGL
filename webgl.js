@@ -29,6 +29,7 @@ var boundaryX = 0.64, boundaryY = 0.64;
 var friction = 0.95;
 var minSpeedLimit = 0.001;
 var collisionOffset = 0.033;
+var spacingOffset = 0.005;
 var startBoundary = 0.5;
 var mouseX=0, mouseY=0, mouseZ=0;
 
@@ -387,7 +388,7 @@ function reactToCollision(ball1, ball2){
   var d = Math.sqrt(posDiff[0]*posDiff[0]+posDiff[1]*posDiff[1]);
 
   // minimum translation distance to push balls apart after intersecting
-  var mtd = [posDiff[0] * (((ball1['scale'][0] + ball2['scale'][0]) - d) / d), posDiff[1] * (((ball1['scale'][1] + ball2['scale'][1]) - d) / d)];
+  var mtd = [posDiff[0] * (((ball1['scale'][0] + ball2['scale'][0] + spacingOffset) - d) / d), posDiff[1] * (((ball1['scale'][1] + ball2['scale'][1] + spacingOffset) - d) / d)];
 
   // resolve intersection -
   // computing inverse mass quantities
