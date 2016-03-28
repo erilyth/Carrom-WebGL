@@ -32,6 +32,8 @@ var collisionOffset = 0.033;
 var spacingOffset = 0.005;
 var startBoundary = 0.5;
 var mouseX=0, mouseY=0, mouseZ=0;
+var dottedLineAngle = 90;
+var dottedLineVisible = 0;
 
 var gamePhase = 0;
 var cameraMode = 0;
@@ -159,6 +161,8 @@ function Initialize()
   makeModel('boardouter3', -0.75, 0, 0, 0.1, 1.6, 0.15, 0, 0, 0,  'boardouter.data', 0);
   makeModel('boardouter4', 0.75, 0, 0, 0.1, 1.6, 0.15, 0, 0, 0, 'boardouter.data', 0);
   
+  makeModel('dottedline', 0, 0, 0, 0.025, 0.01, 0.018+overlapMargin*6, 0, 0, 0, 'dottedline.data', 0);
+
   makeModel('boardline', 0, 0, -overlapMargin, 1.1, 1.1, 0.03, 0, 0, 0, 'boardouter.data', 0);
   makeModel('boardline2', 0, 0, -2*overlapMargin, 1.08, 1.08, 0.03, 0, 0, 0, 'boardinner.data', 0);
  
@@ -254,6 +258,7 @@ function Initialize()
     else if(event.keyCode == 57){ //Key '9'
       if(gamePhase != 1.5){
         controls = 0; //Enable mouse control
+        dottedLineVisible = 0;
       }
       else{
         alert("Cannot switch controls during turn");
@@ -261,15 +266,19 @@ function Initialize()
     }
     else if(event.keyCode == 48){ //Key '0'
       controls = 1; //Enable keyboard control
+      dottedLineVisible = 1;
     }
     else if(event.keyCode == 37) {
       if(controls == 1){
         if(gamePhase == 0){
           coins['striker']['center'][0] -= 0.05;
           coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,coins['striker']['center'][0]));
+          setDottedLine();
         }
         if(gamePhase == 1){
           shootAngle += 5;
+          dottedLineAngle = shootAngle;
+          setDottedLine();
         }
       }
     }
@@ -278,9 +287,12 @@ function Initialize()
         if(gamePhase == 0){
           coins['striker']['center'][0] += 0.05;
           coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,coins['striker']['center'][0]));
+          setDottedLine();
         }
         if(gamePhase == 1){
           shootAngle -= 5;
+          dottedLineAngle = shootAngle;
+          setDottedLine();
         }
       }
     }
@@ -304,6 +316,8 @@ function Initialize()
       if(gamePhase == 0){
         gamePhase = 1;
         shootAngle = 90;
+        dottedLineAngle = shootAngle;
+        setDottedLine();
         shootPower = 0;
       }
       else if(gamePhase == 1){
@@ -318,10 +332,13 @@ function Initialize()
             */
             angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
             shootAngle = 90 - angle*180/Math.PI; //So that right is forward
+            dottedLineAngle = shootAngle;
+            setDottedLine();
             shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
               Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
             coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
             coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+            dottedLineVisible = 0;
             gamePhase = 2; //The turn is in progress
         }
         else{
@@ -331,10 +348,18 @@ function Initialize()
       else if(gamePhase == 1.5){
         coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
         coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+        dottedLineVisible = 0;
         gamePhase = 2;
       }
     }
   });
+}
+
+function setDottedLine(){
+  var position = [coins['striker']['center'][0], coins['striker']['center'][1], 0, 1];
+  models['dottedline']['center'][0] = position[0]*Math.cos((dottedLineAngle) * (3.14/180)) + position[1]*Math.sin((dottedLineAngle) * (3.14/180));
+  models['dottedline']['center'][1] = -position[0]*Math.sin((dottedLineAngle) * (3.14/180)) + position[1]*Math.cos((dottedLineAngle) * (3.14/180));
+  console.log(dottedLineAngle);
 }
 
 function isCollidingX(coin1, coin2){
@@ -583,12 +608,17 @@ function moveCoins(){
     var mousePos = [mouseX, mouseY];
     coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,mousePos[0]));
     coins['striker']['center'][1] = -startBoundary;
+    setDottedLine();
   }
   //Next turn
   if(gamePhase == 2 && allCoinsFrozen()==1){
+    dottedLineAngle = 90;
     gamePhase = 0;
+    if(controls == 1)
+      dottedLineVisible = 1;
     coins['striker']['center'][0] = 0;
     coins['striker']['center'][1] = -startBoundary;
+    setDottedLine();
     if(p1whiteScore + p1blackScore + p2whiteScore + p2blackScore == 8){
       screenVisible = 0;
       console.log('Game Over');
@@ -686,21 +716,24 @@ function matrixMultiply4x1(mat1, mat2){
   ];
 }
 
-function getCamera(){
+function getCamera(isdottedline){
   var cameraMatrix = makeScale(1, 1, 1);
+  if(isdottedline == true){
+    cameraMatrix = matrixMultiply(cameraMatrix, makeZRotation(dottedLineAngle * (Math.PI/180)));
+  }
   if(cameraMode == 0){
     playerCanPlay = 1;
-    cameraMatrix = makeScale(0.9, 0.9, 0.9);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeScale(0.9, 0.9, 0.9));
   }
   else if(cameraMode == 1){
     playerCanPlay = 1;
-    cameraMatrix = makeScale(0.7, 0.7, 0.7);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeScale(0.7, 0.7, 0.7));
     cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(50 * (Math.PI/180)));
   }
   else if(cameraMode == 2){
     temp += 0.02;
     playerCanPlay = 0;
-    cameraMatrix = makeScale(0.58, 0.58, 0.58);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeScale(0.58, 0.58, 0.58));
     cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(90 * (Math.PI/180)));
     cameraMatrix = matrixMultiply(cameraMatrix, makeYRotation(temp * (Math.PI/180)));
     cameraMatrix = matrixMultiply(cameraMatrix, makeXRotation(-40 * (Math.PI/180)));
@@ -710,7 +743,7 @@ function getCamera(){
       gameInitialized = true;
     }
     playerCanPlay = 0;
-    cameraMatrix = makeScale(1.5, 1.5, 1.5);
+    cameraMatrix = matrixMultiply(cameraMatrix, makeScale(1.5, 1.5, 1.5));
     var striker = coins['striker'];
     var coin;
     if(currentCoinFocus == 1) {coin = coins['black1'];}
@@ -769,15 +802,11 @@ function drawScene(){
   for(var key in models){
     var model = models[key];
     //console.log(model);
-    var cameraMatrix = getCamera();
-    var MVPMatrix = cameraMatrix;
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
   for(var key in coins){
     var model = coins[key];
     //console.log(model);
-    var cameraMatrix = getCamera();
-    var MVPMatrix = cameraMatrix;
     createModel(model['name'], model['center'][0], model['center'][1], model['center'][2], model['scale'][0],  model['scale'][1],  model['scale'][2], model['speed'][0], model['speed'][1], model['speed'][2], model['filedata'], model['filename'], model['iscoin']);
   }
 }
@@ -789,7 +818,7 @@ function mouseClick(canvas, evt){
   var striker = coins["striker"];
   var strikerPosOrig = striker['center'];
   var strikerScale = striker['scale'];
-  var strikerPos = matrixMultiply4x1(getCamera(), [strikerPosOrig[0], strikerPosOrig[1], strikerPosOrig[2], 1]);
+  var strikerPos = matrixMultiply4x1(getCamera(false), [strikerPosOrig[0], strikerPosOrig[1], strikerPosOrig[2], 1]);
   var mousePos = [mouseX, mouseY];
   //console.log(strikerPos);
   //console.log(mousePos);
@@ -805,10 +834,13 @@ function mouseClick(canvas, evt){
     */
     angle = Math.atan2((mousePos[0]-strikerPos[0]),(mousePos[1]-strikerPos[1]));
     shootAngle = 90 - angle*180/Math.PI; //So that right is forward
+    dottedLineAngle = shootAngle;
+    setDottedLine();
     shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
       Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
     coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
     coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+    dottedLineVisible = 0;
     gamePhase = 2; //The turn is in progress
     //console.log(shootAngle);
   }
@@ -1066,14 +1098,25 @@ function createModel(name, x_pos, y_pos, z_pos, x_scale, y_scale, z_scale, speed
 
     var u_matrix = gl.getUniformLocation(program, "u_matrix");
     //matrix = matrixMultiply(matrix, makeYRotation(69 * (Math.PI/180)));
-    gl.uniformMatrix4fv(u_matrix, false, getCamera());
-
+    if(name == 'dottedline'){
+      gl.uniformMatrix4fv(u_matrix, false, getCamera(true));
+    }
+    else{
+      gl.uniformMatrix4fv(u_matrix, false, getCamera(false));
+    }
     //console.log(vertex_buffer_data);
     //console.log(vertex_buffer_data.length);
 
     // draw
     if (screenVisible == 1){
-      gl.drawArrays(gl.TRIANGLES, 0, vertex_buffer_data.length/3);
+      if(name == 'dottedline'){
+        if(dottedLineVisible == 1){
+          gl.drawArrays(gl.TRIANGLES, 0, vertex_buffer_data.length/3);
+        }
+      }
+      else{
+        gl.drawArrays(gl.TRIANGLES, 0, vertex_buffer_data.length/3);
+      }
     }
     var mymodel = {'center':[x_pos,y_pos,z_pos], 'scale':[x_scale,y_scale,z_scale], 'speed':[speed_x, speed_y, speed_z], 'name':name, 'filedata':filedata, 'filename':filename, 'iscoin':iscoin};
     if (!iscoin){
