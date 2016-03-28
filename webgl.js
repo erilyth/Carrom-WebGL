@@ -345,6 +345,70 @@ function isCollidingY(coin1, coin2){
   return 0; 
 }
 
+function reactToCollision(ball1, ball2){
+  var collisionision_angle = Math.atan2((ball2['center'][1] - ball1['center'][1]), (ball2['center'][0] - ball1['center'][0]));        
+  var speed1 = Math.sqrt(ball1['speed'][0]*ball1['speed'][0]+ball1['speed'][1]*ball1['speed'][1]);
+  var speed2 = Math.sqrt(ball2['speed'][0]*ball2['speed'][0]+ball2['speed'][1]*ball2['speed'][1]);
+
+  var direction_1 = Math.atan2(ball1['speed'][1], ball1['speed'][0]);
+  var direction_2 = Math.atan2(ball2['speed'][1], ball2['speed'][0]);
+  var new_xspeed_1 = speed1 * Math.cos(direction_1 - collisionision_angle);
+  var new_yspeed_1 = speed1 * Math.sin(direction_1 - collisionision_angle);
+  var new_xspeed_2 = speed2 * Math.cos(direction_2 - collisionision_angle);
+  var new_yspeed_2 = speed2 * Math.sin(direction_2 - collisionision_angle);
+
+  var final_xspeed_1 = new_xspeed_2;
+  var final_xspeed_2 = new_xspeed_1;
+  var final_yspeed_1 = new_yspeed_1;
+  var final_yspeed_2 = new_yspeed_2;
+
+  var cosAngle = Math.cos(collisionision_angle);
+  var sinAngle = Math.sin(collisionision_angle);
+  ball1['speed'][0] = (cosAngle * final_xspeed_1 - sinAngle * final_yspeed_1)*0.9992;
+  ball1['speed'][1] = (sinAngle * final_xspeed_1 + cosAngle * final_yspeed_1)*0.9992;
+  ball2['speed'][0] = (cosAngle * final_xspeed_2 - sinAngle * final_yspeed_2)*0.9992;
+  ball2['speed'][1] = (sinAngle * final_xspeed_2 + cosAngle * final_yspeed_2)*0.9992;
+
+  if(Math.abs(ball1['speed'][0]) <= minSpeedLimit)
+    ball1['speed'][0] = 0;
+  if(Math.abs(ball1['speed'][1]) <= minSpeedLimit)
+    ball1['speed'][1] = 0;
+  if(Math.abs(ball2['speed'][0]) <= minSpeedLimit)
+    ball2['speed'][0] = 0;
+  if(Math.abs(ball2['speed'][1]) <= minSpeedLimit)
+    ball2['speed'][1] = 0;
+
+  //console.log(ball1['speed'],ball2['speed']);
+
+  var pos1 = [ball1['center'][0], ball1['center'][1]];
+  var pos2 = [ball2['center'][0], ball2['center'][1]];
+
+  var posDiff = [pos1[0]-pos2[0],pos1[1]-pos2[1]];
+  var d = Math.sqrt(posDiff[0]*posDiff[0]+posDiff[1]*posDiff[1]);
+
+  // minimum translation distance to push balls apart after intersecting
+  var mtd = [posDiff[0] * (((ball1['scale'][0] + ball2['scale'][0]) - d) / d), posDiff[1] * (((ball1['scale'][1] + ball2['scale'][1]) - d) / d)];
+
+  // resolve intersection -
+  // computing inverse mass quantities
+  var im1 = 1;
+  var im2 = 1;
+
+  pos1[0] = pos1[0] + mtd[0] * (im1 / (im1 + im2));
+  pos1[1] = pos1[1] + mtd[1] * (im1 / (im1 + im2));
+  pos2[0] = pos2[0] - mtd[0] * (im2 / (im1 + im2));
+  pos2[1] = pos2[1] - mtd[1] * (im2 / (im1 + im2));
+  ball1['center'][0] = pos1[0];
+  ball1['center'][1] = pos1[1];
+  ball2['center'][0] = pos2[0];
+  ball2['center'][1] = pos2[1];
+
+  //console.log(ball1['center'],ball2['center']);
+
+  coins[ball1['name']] = ball1;
+  coins[ball2['name']] = ball2;
+}
+
 function checkCollisions(){
   for(var key1 in coins){
     for(var key2 in coins){
@@ -353,49 +417,8 @@ function checkCollisions(){
       var coin1 = coins[key1];
       var coin2 = coins[key2];
       if(isCollidingX(coin1, coin2) || isCollidingY(coin1, coin2)){
-        coin1['center'][0] -= coin1['speed'][0];
-        coin2['center'][0] -= coin2['speed'][0];
-        coin1['center'][1] -= coin1['speed'][1];
-        coin2['center'][1] -= coin2['speed'][1];
-        var speed1x = coin1['speed'][0];
-        var speed1y = coin1['speed'][1];
-        var speed2x = coin2['speed'][0];
-        var speed2y = coin2['speed'][1];
-        var slopecol = 10000000000; //Slope is infinity
-        if (coin2['center'][0] != coin1['center'][0]){
-          slopecol = (coin2['center'][1]-coin1['center'][1])/(coin2['center'][0]-coin1['center'][0]);
-        }
-        var slopeperp = 10000000000;
-        if(slopecol != 0)
-          slopeperp = -1/slopecol;
-        var anglecolx = Math.atan(slopecol);
-        var anglecoly = (90-anglecolx*(180/Math.PI))*(Math.PI/180);
-        var angleperpx = Math.atan(slopeperp);
-        var angleperpy = (90-angleperpx*(180/Math.PI))*(Math.PI/180);
-        var speed1col = speed2y*Math.cos(anglecoly) + speed2x*Math.cos(anglecolx);
-        var speed1perp = speed2y*Math.cos(angleperpy) + speed2x*Math.cos(angleperpx);
-        var speed2col = speed1y*Math.cos(anglecoly) + speed1x*Math.cos(anglecolx);
-        var speed2perp = speed1y*Math.cos(angleperpy) + speed1x*Math.cos(angleperpx);
-        var speed1xnew = speed1col*Math.cos(anglecolx) + speed1perp*Math.cos(angleperpx);
-        var speed1ynew = speed1col*Math.cos(anglecoly) + speed1perp*Math.cos(angleperpy);
-        var speed2xnew = speed2col*Math.cos(anglecolx) + speed2perp*Math.cos(angleperpx);
-        var speed2ynew = speed2col*Math.cos(anglecoly) + speed2perp*Math.cos(angleperpy);
-        //console.log(anglecolx*(180/Math.PI),anglecoly*(180/Math.PI), angleperpx*(180/Math.PI), angleperpy*(180/Math.PI));
-        //console.log('speed old',coin1['speed'][0],coin1['speed'][1], coin2['speed'][0], coin2['speed'][1]);
-        //console.log('speeds',speed1xnew,speed1ynew, speed2xnew, speed2ynew);
-        var own = 0.92;
-        var other = 1 - own;
-        coin1['speed'][0] = own*speed1xnew + other*speed2xnew;
-        coin1['speed'][1] = own*speed1ynew + other*speed2ynew;
-        coin2['speed'][0] = own*speed2xnew + other*speed1xnew;
-        coin2['speed'][1] = own*speed2ynew + other*speed1ynew;
-        coin1['center'][0] += speed1xnew;
-        coin2['center'][0] += speed2xnew;
-        coin1['center'][1] += speed1ynew;
-        coin2['center'][1] += speed2ynew;
+        reactToCollision(coin1, coin2);
       }
-      coins[key1] = coin1;
-      coins[key2] = coin2;
     }
   }
 }
@@ -410,7 +433,7 @@ function allCoinsFrozen(){
 }
 
 function getScores(){
-  var placeOffset = 0.73;
+  var placeOffset = 0.74;
   for(var key in coins){
     if(alive[key]==false){
       continue;
