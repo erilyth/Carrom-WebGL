@@ -162,9 +162,15 @@ function Initialize()
   makeModel('boardline', 0, 0, -overlapMargin, 1.1, 1.1, 0.03, 0, 0, 0, 'boardouter.data', 0);
   makeModel('boardline2', 0, 0, -2*overlapMargin, 1.08, 1.08, 0.03, 0, 0, 0, 'boardinner.data', 0);
  
-  makeModel('cylindercenter1', 0, 0, 0, 0.2, 0.2, 0.018, 0, 0, 0, 'cylinder.data', 0);
-  makeModel('cylindercenter2', 0, 0, 0, 0.185, 0.185, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
-  
+  makeModel('boardcenter', 0, 0, 0, 0.05, 0.05, 0.018+overlapMargin*4, 0, 0, 0, 'boardcenter.data', 0);
+  makeModel('boardcenter1', 0, 0, 0, 0.03, 0.03, 0.018+overlapMargin*5, 0, 0, 0, 'cylinderdetailedlight.data', 0);
+
+  makeModel('cylindercenter1', 0, 0, 0, 0.21, 0.21, 0.018, 0, 0, 0, 'cylinderdetailed.data', 0);
+  makeModel('cylindercenter2', 0, 0, 0, 0.205, 0.205, 0.018+overlapMargin, 0, 0, 0, 'cylinderdetailedlight.data', 0);
+
+  makeModel('cylindercenter3', 0, 0, 0, 0.2, 0.2, 0.018+2*overlapMargin, 0, 0, 0, 'cylinderdetailed.data', 0);
+  makeModel('cylindercenter4', 0, 0, 0, 0.185, 0.185, 0.018+3*overlapMargin, 0, 0, 0, 'cylinderdetailedlight.data', 0);
+
   makeModel('cylinderside1', -0.506, -0.506, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
   makeModel('cylinderside2', -0.506, -0.506, 0, 0.025, 0.025, 0.018+overlapMargin, 0, 0, 0, 'cylinderlight.data', 0);
   makeModel('cylinderside3', 0.506, -0.506, 0, 0.035, 0.035, 0.018, 0, 0, 0, 'cylinder.data', 0);
