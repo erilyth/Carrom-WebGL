@@ -132,7 +132,7 @@ function createProgramFromScripts(gl, vertexShaderId, fragmentShaderId) {
 
 function loadpreviouscoins(){
   for(var key in coins){
-    console.log('yobro');
+    //console.log('yobro');
     previousCoins[key] = {};
     previousCoins[key]['center'] = [];
     previousCoins[key]['speed'] = [];
@@ -147,7 +147,7 @@ function loadpreviouscoins(){
 
 function loadcurrentcoins(){
   for(var key in coins){
-    console.log('yobro2');
+    //console.log('yobro2');
     coins[key]['center'][0] = previousCoins[key]['center'][0];
     coins[key]['center'][1] = previousCoins[key]['center'][1];
     coins[key]['center'][2] = previousCoins[key]['center'][2];
@@ -155,6 +155,13 @@ function loadcurrentcoins(){
     coins[key]['speed'][1] = previousCoins[key]['speed'][1];
     coins[key]['speed'][2] = previousCoins[key]['speed'][2];
   }
+}
+
+function setPowerbar(){
+  var powerbar = document.getElementById('powerbarfill');
+  var pixelsToFill = Math.floor((shootPower/0.2)*300);
+  $('#powerbarfill').css("height", pixelsToFill);
+  $('#powerbarfill').css("top", 550 - pixelsToFill); 
 }
 
 function Initialize()
@@ -331,6 +338,7 @@ function Initialize()
         if(gamePhase == 1.5){
           shootPower -= 0.01;
           shootPower = Math.max(shootPower, 0);
+          setPowerbar();
         }
       }
     }
@@ -339,6 +347,7 @@ function Initialize()
         if(gamePhase == 1.5){
           shootPower += 0.01;
           shootPower = Math.min(shootPower, 0.2);
+          setPowerbar();
         }
       }
     }
@@ -349,6 +358,7 @@ function Initialize()
         dottedLineAngle = shootAngle;
         setDottedLine();
         shootPower = 0;
+        setPowerbar();
       }
       else if(gamePhase == 1){
         var mousePos = [mouseX, mouseY];
@@ -366,6 +376,7 @@ function Initialize()
             setDottedLine();
             shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
               Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
+            setPowerbar();
             coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
             coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
             loadpreviouscoins();
@@ -391,7 +402,7 @@ function setDottedLine(){
   var position = [coins['striker']['center'][0], coins['striker']['center'][1], 0, 1];
   models['dottedline']['center'][0] = position[0]*Math.cos((dottedLineAngle) * (3.14/180)) + position[1]*Math.sin((dottedLineAngle) * (3.14/180));
   models['dottedline']['center'][1] = -position[0]*Math.sin((dottedLineAngle) * (3.14/180)) + position[1]*Math.cos((dottedLineAngle) * (3.14/180));
-  console.log(dottedLineAngle);
+  //console.log(dottedLineAngle);
 }
 
 function isCollidingX(coin1, coin2){
@@ -655,7 +666,7 @@ function getScores(){
   }
   if(replay == 0 && doReplay == 1){
     replay = 1;
-    console.log('done');
+    //console.log('done');
   }
 }
 
@@ -664,7 +675,7 @@ function moveCoins(){
   getScores();
   if(gamePhase == 0 && playerCanPlay && controls == 0 && replay!=2){
     var mousePos = [mouseX, mouseY];
-    console.log('hehehe');
+    //console.log('hehehe');
     coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,mousePos[0]));
     coins['striker']['center'][1] = -startBoundary;
     setDottedLine();
@@ -712,7 +723,7 @@ function moveCoins(){
       gamePhase = 2;
       playerCanPlay = 0;
       loadcurrentcoins();
-      console.log('hoho');
+      //console.log('hoho');
     }
   }
   for(var key in coins){
@@ -912,6 +923,7 @@ function mouseClick(canvas, evt){
     setDottedLine();
     shootPower = Math.sqrt(Math.abs(mousePos[0]-strikerPos[0])*Math.abs(mousePos[0]-strikerPos[0]) + 
       Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
+    setPowerbar();
     coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
     coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
     loadpreviouscoins();
