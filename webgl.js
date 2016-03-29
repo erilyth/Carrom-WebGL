@@ -697,6 +697,11 @@ function moveCoins(){
     }
     currentPlayer = 1 - currentPlayer;
     bonusTurn = false;
+    if(replay == 1 || replay == 2){
+      if(!bonusTurn){
+        currentPlayer = 1 - currentPlayer;
+      }
+    }
     if(replay == 2){
       replay = 0;
       playerCanPlay = 1;
@@ -704,9 +709,6 @@ function moveCoins(){
     }
     if(replay == 1){
       replay = 2;
-      if(!bonusTurn){
-        currentPlayer = 1 - currentPlayer;
-      }
       gamePhase = 2;
       playerCanPlay = 0;
       loadcurrentcoins();
