@@ -36,6 +36,8 @@ var dottedLineAngle = 90;
 var dottedLineVisible = 0;
 
 var gamePhase = 0;
+var replay = 0;
+var previousCoins = {};
 var cameraMode = 0;
 var playerCanPlay = 1;
 var controls = 0; //If 0 then mouse controls, if 1 then keyboard controls
@@ -128,6 +130,33 @@ function createProgramFromScripts(gl, vertexShaderId, fragmentShaderId) {
   return createProgram(gl, vertexShader, fragmentShader);
 }
 
+function loadpreviouscoins(){
+  for(var key in coins){
+    console.log('yobro');
+    previousCoins[key] = {};
+    previousCoins[key]['center'] = [];
+    previousCoins[key]['speed'] = [];
+    previousCoins[key]['center'][0] = coins[key]['center'][0];
+    previousCoins[key]['center'][1] = coins[key]['center'][1];
+    previousCoins[key]['center'][2] = coins[key]['center'][2];
+    previousCoins[key]['speed'][0] = coins[key]['speed'][0];
+    previousCoins[key]['speed'][1] = coins[key]['speed'][1];
+    previousCoins[key]['speed'][2] = coins[key]['speed'][2];
+  }
+}
+
+function loadcurrentcoins(){
+  for(var key in coins){
+    console.log('yobro2');
+    coins[key]['center'][0] = previousCoins[key]['center'][0];
+    coins[key]['center'][1] = previousCoins[key]['center'][1];
+    coins[key]['center'][2] = previousCoins[key]['center'][2];
+    coins[key]['speed'][0] = previousCoins[key]['speed'][0];
+    coins[key]['speed'][1] = previousCoins[key]['speed'][1];
+    coins[key]['speed'][2] = previousCoins[key]['speed'][2];
+  }
+}
+
 function Initialize()
 {
 
@@ -218,6 +247,7 @@ function Initialize()
   alive['white4'] = true;
   alive['black4'] = true;
 
+  setTimeout(loadpreviouscoins, 1000);
   setInterval(drawScene, 15); //(1000/15) fps
   timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds
 
@@ -338,6 +368,7 @@ function Initialize()
               Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
             coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
             coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+            loadpreviouscoins();
             dottedLineVisible = 0;
             gamePhase = 2; //The turn is in progress
         }
@@ -348,6 +379,7 @@ function Initialize()
       else if(gamePhase == 1.5){
         coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
         coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+        loadpreviouscoins();
         dottedLineVisible = 0;
         gamePhase = 2;
       }
@@ -484,6 +516,7 @@ function playSound(sound){
 
 function getScores(){
   var placeOffset = 0.74;
+  var doReplay = 0;
   for(var key in coins){
     if(alive[key]==false){
       continue;
@@ -492,8 +525,10 @@ function getScores(){
       if(coins[key]['name'][0]=='b'){
         if(redinPreviously==1 || redinPreviously==2){
           if(currentPlayer == 1){
-            p2redScore += 1;
-            p2Score += 20;
+            if(replay == 2){
+              p2redScore += 1;
+              p2Score += 20;
+            }
             var p1Coins = p1blackScore + p1whiteScore + p1redScore;
             var p2Coins = p2blackScore + p2whiteScore + p2redScore;
             coins['red']['center'][0] = placeOffset - p2Coins * 0.1;
@@ -501,12 +536,15 @@ function getScores(){
             coins['red']['center'][2] = -0.08;
             coins['red']['speed'][0] = 0;
             coins['red']['speed'][1] = 0;
-            alive['red'] = false;
+            if(replay == 2)
+              alive['red'] = false;
           }
         }
         if(currentPlayer==0){
-          p1blackScore += 1;
-          p1Score -= 20;
+          if(replay == 2){
+            p1blackScore += 1;
+            p1Score -= 20;
+          }
           var p1Coins = p1blackScore + p1whiteScore + p1redScore;
           var p2Coins = p2blackScore + p2whiteScore + p2redScore;
           coins[key]['center'][0] = -placeOffset + p1Coins * 0.1;
@@ -514,11 +552,14 @@ function getScores(){
           coins[key]['center'][2] = -0.08;
           coins[key]['speed'][0] = 0;
           coins[key]['speed'][1] = 0;
-          alive[key] = false;
+          if(replay == 2)
+            alive[key] = false;
         }
         else{
-          p2blackScore += 1;
-          p2Score += 5;
+          if(replay == 2){
+            p2blackScore += 1;
+            p2Score += 5;
+          }
           var p1Coins = p1blackScore + p1whiteScore + p1redScore;
           var p2Coins = p2blackScore + p2whiteScore + p2redScore;
           coins[key]['center'][0] = placeOffset - p2Coins * 0.1;
@@ -526,15 +567,18 @@ function getScores(){
           coins[key]['center'][2] = -0.08;
           coins[key]['speed'][0] = 0;
           coins[key]['speed'][1] = 0;
-          alive[key] = false;
+          if(replay == 2)
+            alive[key] = false;
           bonusTurn = true;
         }
       }
       else if(coins[key]['name'][0]=='w'){
         if(redinPreviously==1 || redinPreviously==2){
           if(currentPlayer==0){
-            p1redScore += 1;
-            p1Score += 20;
+            if(replay == 2){
+              p1redScore += 1;
+              p1Score += 20;
+            }
             var p1Coins = p1blackScore + p1whiteScore + p1redScore;
             var p2Coins = p2blackScore + p2whiteScore + p2redScore;
             coins['red']['center'][0] = -placeOffset + p2Coins * 0.1;
@@ -542,12 +586,15 @@ function getScores(){
             coins['red']['center'][2] = -0.08;
             coins['red']['speed'][0] = 0;
             coins['red']['speed'][1] = 0;
-            alive['red'] = false;
+            if(replay == 2)
+              alive['red'] = false;
           }
         }
         if(currentPlayer==0){
-          p1whiteScore += 1;
-          p1Score += 5;
+          if(replay == 2){
+            p1whiteScore += 1;
+            p1Score += 5;
+          }
           var p1Coins = p1blackScore + p1whiteScore + p1redScore;
           var p2Coins = p2blackScore + p2whiteScore + p2redScore;
           coins[key]['center'][0] = -placeOffset + p1Coins * 0.1;
@@ -555,12 +602,15 @@ function getScores(){
           coins[key]['center'][2] = -0.08;
           coins[key]['speed'][0] = 0;
           coins[key]['speed'][1] = 0;
-          alive[key] = false;
+          if(replay == 2)
+            alive[key] = false;
           bonusTurn = true;
         }
         else{
-          p2whiteScore += 1;
-          p2Score -= 20;
+          if(replay == 2){
+            p2whiteScore += 1;
+            p2Score -= 20;
+          }
           var p1Coins = p1blackScore + p1whiteScore + p1redScore;
           var p2Coins = p2blackScore + p2whiteScore + p2redScore;
           coins[key]['center'][0] = placeOffset - p2Coins * 0.1;
@@ -568,7 +618,8 @@ function getScores(){
           coins[key]['center'][2] = -0.08;
           coins[key]['speed'][0] = 0;
           coins[key]['speed'][1] = 0;
-          alive[key] = false;
+          if(replay == 2)
+            alive[key] = false;
         }
       }
       else if(coins[key]['name'][0]=='r'){
@@ -576,7 +627,8 @@ function getScores(){
         bonusTurn = true;
         coins[key]['center'][0] = 100;
         coins[key]['center'][1] = 100;
-        alive['red'] = false;
+        if(replay == 2)
+            alive['red'] = false;
         coins[key]['speed'][0] = 0;
         coins[key]['speed'][1] = 0;
       }
@@ -597,15 +649,22 @@ function getScores(){
       if(coins[key]['name'][0] != 's'){
         playSound('goal');
       }
+      if(coins[key]['name'][0]!='s')
+        doReplay = 1;
     }
+  }
+  if(replay == 0 && doReplay == 1){
+    replay = 1;
+    console.log('done');
   }
 }
 
 function moveCoins(){
   //console.log(currentPlayer);
   getScores();
-  if(gamePhase == 0 && playerCanPlay && controls == 0){
+  if(gamePhase == 0 && playerCanPlay && controls == 0 && replay!=2){
     var mousePos = [mouseX, mouseY];
+    console.log('hehehe');
     coins['striker']['center'][0] = Math.min(0.5, Math.max(-0.5,mousePos[0]));
     coins['striker']['center'][1] = -startBoundary;
     setDottedLine();
@@ -636,10 +695,23 @@ function moveCoins(){
         alive['red'] = true;
       }
     }
-    if(!bonusTurn){
-      currentPlayer = 1 - currentPlayer;
-    }
+    currentPlayer = 1 - currentPlayer;
     bonusTurn = false;
+    if(replay == 2){
+      replay = 0;
+      playerCanPlay = 1;
+      console.log('replay done');
+    }
+    if(replay == 1){
+      replay = 2;
+      if(!bonusTurn){
+        currentPlayer = 1 - currentPlayer;
+      }
+      gamePhase = 2;
+      playerCanPlay = 0;
+      loadcurrentcoins();
+      console.log('hoho');
+    }
   }
   for(var key in coins){
     if(alive[key] == false){
@@ -840,6 +912,7 @@ function mouseClick(canvas, evt){
       Math.abs(mousePos[1]-strikerPos[1])*Math.abs(mousePos[1]-strikerPos[1]))/(1.36/0.15);
     coins["striker"]["speed"][0] = shootPower*Math.cos(shootAngle*Math.PI/180);
     coins["striker"]["speed"][1] = shootPower*Math.sin(shootAngle*Math.PI/180);
+    loadpreviouscoins();
     dottedLineVisible = 0;
     gamePhase = 2; //The turn is in progress
     //console.log(shootAngle);
