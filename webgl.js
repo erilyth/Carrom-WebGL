@@ -692,6 +692,7 @@ function moveCoins(){
     if(p1whiteScore + p1blackScore + p2whiteScore + p2blackScore == 8){
       screenVisible = 0;
       console.log('Game Over');
+      $('#victory').css("display", 'initial');
     }
     clearInterval(timerInterval);
     timerInterval = setInterval(timer, 5000); //Reduce points every 5 seconds

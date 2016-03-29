@@ -4,6 +4,12 @@
 }
 
 @font-face {
+    font-family: 'Searn';
+    src: url('searn.ttf');
+}
+
+
+@font-face {
     font-family: 'Content';
     src: url('content.ttf');
 }
